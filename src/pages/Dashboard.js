@@ -5,29 +5,14 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const Dashboard = () => {
-    const { user, accessToken, logout } = useAuth();
+    const { user, accessToken } = useAuth();
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [orderSummary, setOrderSummary] = useState(null);
-    const [profile, setProfile] = useState(null);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Fetch user profile
+    // Redirect if not authenticated
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const response = await axios.get(`http://127.0.0.1:8000/auth/users/${user.id}/`, {
-                    headers: { Authorization: `Bearer ${accessToken}` },
-                });
-                setProfile(response.data);
-            } catch (err) {
-                toast.error('Failed to fetch profile.');
-            }
-        };
-
-        if (user && accessToken) {
-            fetchProfile();
-        } else {
+        if (!user || !accessToken) {
             navigate('/auth');
         }
     }, [user, accessToken, navigate]);
@@ -83,158 +68,118 @@ const Dashboard = () => {
         }
     };
 
-    const handleLogout = async () => {
-        await logout();
-        toast.success('Logged out successfully.');
-        navigate('/auth');
-    };
-
     return (
-        <div className="min-h-screen flex">
-            {/* Sidebar */}
-            <aside
-                className={`form fixed inset-y-0 left-0 w-64 transform ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                } md:translate-x-0 transition-transform duration-300 ease-in-out z-50`}
-            >
-                <div className="p-4">
-                    <h2 className="text-2xl text-white font-weight-600 mb-6">My Dashboard</h2>
-                    <nav>
-                        <ul>
-                            <li className="mb-4">
-                                <a href="#orders" className="text-white hover:text-[#1ab188]">
-                                    Orders
-                                </a>
-                            </li>
-                            <li className="mb-4">
-                                <a href="/profile" className="text-white hover:text-[#1ab188]" onClick={() => navigate('/profile')}>
-                                    Profile
-                                </a>
-                            </li>
-                            <li className="mb-4">
-                                <a href="/chats" className="text-white hover:text-[#1ab188]" onClick={() => navigate('/chats')}>
-                                    Chats
-                                </a>
-                            </li>
-                            <li className="mb-4">
-                                <a href="/products" className="text-white hover:text-[#1ab188]" onClick={() => navigate('/products')}>
-                                    Products
-                                </a>
-                            </li>
-                            <li className="mb-4">
-                                <button onClick={handleLogout} className="text-white hover:text-[#1ab188]">
-                                    Logout
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            </aside>
 
-            {/* Main Content */}
-            <div className="flex-1">
-                {/* Sidebar Toggle Button */}
-                <button
-                    className="md:hidden p-4 text-white bg-[#13232f]"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                    </svg>
-                </button>
-
-                <div className="p-8">
-                    {/* Profile Summary */}
-                    <div className="form mb-8">
-                        <h1>Profile Summary</h1>
-                        {profile ? (
-                            <div className="field-wrap">
-                                <p className="text-white"><strong>Username:</strong> {profile.username}</p>
-                                <p className="text-white"><strong>Email:</strong> {profile.email}</p>
-                                <p className="text-white"><strong>Name:</strong> {profile.first_name} {profile.last_name}</p>
-                                <p className="text-white"><strong>Role:</strong> {profile.role}</p>
-                                <button
-                                    className="button button-block mt-4"
-                                    onClick={() => navigate('/profile')}
-                                >
-                                    Edit Profile
-                                </button>
+        <div className="container-fluid p-4">
+            <div className="row g-4">
+                {/* Stats Cards */}
+                <div className="col-12 col-md-4">
+                    <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                    <i className="fas fa-shopping-bag text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 className="mb-1">Total Orders</h6>
+                                    <h3 className="mb-0">{orderSummary?.status_counts?.total || 0}</h3>
+                                </div>
                             </div>
-                        ) : (
-                            <p className="text-white">Loading profile...</p>
-                        )}
+                        </div>
                     </div>
+                </div>
 
-                    {/* Orders Overview */}
-                    <div className="form">
-                        <h1>Your Orders</h1>
-                        {orderSummary ? (
-                            <div className="field-wrap">
-                                <p className="text-white">
-                                    <strong>Total Orders:</strong> {orderSummary.status_counts?.total || 0}
-                                </p>
-                                <p className="text-white">
-                                    <strong>Pending Orders:</strong> {orderSummary.status_counts?.pending || 0}
-                                </p>
-                                <p className="text-white">
-                                    <strong>Total Spent:</strong> ${(orderSummary.total_spent ? Number(orderSummary.total_spent) : 0).toFixed(2)}
-                                </p>
+                <div className="col-12 col-md-4">
+                    <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                                    <i className="fas fa-clock text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 className="mb-1">Pending Orders</h6>
+                                    <h3 className="mb-0">{orderSummary?.status_counts?.pending || 0}</h3>
+                                </div>
                             </div>
-                        ) : (
-                            <p className="text-white">Loading order summary...</p>
-                        )}
+                        </div>
+                    </div>
+                </div>
 
-                        <h2 className="text-white font-weight-300 mt-6 mb-4">Recent Orders</h2>
-                        {orders.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-white">
+                <div className="col-12 col-md-4">
+                    <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                    <i className="fas fa-dollar-sign text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 className="mb-1">Total Spent</h6>
+                                    <h3 className="mb-0">${(orderSummary?.total_spent || 0).toFixed(2)}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Recent Orders Table */}
+                <div className="col-12">
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-header bg-white py-3">
+                            <h5 className="mb-0">Recent Orders</h5>
+                        </div>
+                        <div className="card-body">
+                            <div className="table-responsive">
+                                <table className="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th className="p-2 text-left">Order Number</th>
-                                            <th className="p-2 text-left">Total Amount</th>
-                                            <th className="p-2 text-left">Status</th>
-                                            <th className="p-2 text-left">Created At</th>
-                                            <th className="p-2 text-left">Actions</th>
+                                            <th>Order Number</th>
+                                            <th>Total Amount</th>
+                                            <th>Status</th>
+                                            <th>Date Created</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {orders.map(order => {
-                                            // Convert total_amount to number and handle null/undefined cases
-                                            const totalAmount = order.total_amount ? Number(order.total_amount) : 0;
-                                            
-                                            return (
-                                                <tr key={order.id} className="border-t border-[#a0b3b0]">
-                                                    <td className="p-2">{order.order_number}</td>
-                                                    <td className="p-2">${totalAmount.toFixed(2)}</td>
-                                                    <td className="p-2">{order.status}</td>
-                                                    <td className="p-2">{new Date(order.created_at).toLocaleDateString()}</td>
-                                                    <td className="p-2">
+                                        {orders.map(order => (
+                                            <tr key={order.id}>
+                                                <td>{order.order_number}</td>
+                                                <td>${Number(order.total_amount || 0).toFixed(2)}</td>
+                                                <td>
+                                                    <span className={`badge bg-${
+                                                        order.status === 'pending' ? 'warning' :
+                                                        order.status === 'completed' ? 'success' :
+                                                        order.status === 'shipped' ? 'info' : 'secondary'
+                                                    }`}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                                <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                                                <td>
+                                                    <div className="btn-group">
                                                         {order.status === 'pending' && (
                                                             <button
-                                                                className="button mr-2"
+                                                                className="btn btn-sm btn-outline-danger"
                                                                 onClick={() => handleCancelOrder(order.id)}
                                                             >
-                                                                Cancel
+                                                                <i className="fas fa-times me-1"></i>Cancel
                                                             </button>
                                                         )}
                                                         {(order.status === 'shipped' || order.status === 'completed') && (
                                                             <button
-                                                                className="button"
+                                                                className="btn btn-sm btn-outline-warning"
                                                                 onClick={() => handleRequestReturn(order.id)}
                                                             >
-                                                                Request Return
+                                                                <i className="fas fa-undo me-1"></i>Return
                                                             </button>
                                                         )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
-                        ) : (
-                            <p className="text-white">No orders found.</p>
-                        )}
+                        </div>
                     </div>
                 </div>
             </div>

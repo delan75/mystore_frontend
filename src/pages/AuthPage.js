@@ -14,8 +14,16 @@ const AuthPage = () => {
     const [gender, setGender] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [error, setError] = useState(null);
-    const { login, register, logout } = useAuth();
+    const { login, register } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if there's a hash in the URL
+        const hash = window.location.hash.replace('#', '');
+        if (hash === 'login' || hash === 'signup') {
+            setActiveTab(hash);
+        }
+    }, []);
 
     const handleResetPasswordClick = () => {
         navigate('/reset-password');
@@ -51,6 +59,7 @@ const AuthPage = () => {
     const handleTabChange = (tab) => {
         setActiveTab(tab);
         setError(null);
+        window.location.hash = tab;
     };
 
     const handleLogin = async (e) => {
@@ -81,16 +90,16 @@ const AuthPage = () => {
                 gender,
                 phone_number: phoneNumber,
             };
-            
+
             const response = await register(userData);
-            
+
             if (response.user && response.tokens) {
                 setActiveTab('login');
                 setError(null);
-                
+
                 const successMessage = `Registration successful! Your username is: ${response.user.username}
 Please save this username as you'll need it to log in.`;
-                
+
                 toast.success(successMessage, {
                     autoClose: 10000,
                     position: "top-center",
@@ -99,7 +108,7 @@ Please save this username as you'll need it to log in.`;
                     pauseOnHover: true,
                     draggable: true,
                 });
-                
+
                 // Clear the form
                 setEmail('');
                 setPassword('');
@@ -111,10 +120,10 @@ Please save this username as you'll need it to log in.`;
             }
         } catch (err) {
             // console.error('Registration error:', err.response?.data); // Debug error response
-            
+
             if (err.response?.data) {
                 const errorData = err.response?.data;
-                
+
                 // Handle the new error format
                 if (errorData.fields) {
                     const errorMessages = Object.entries(errorData.fields)
@@ -124,17 +133,17 @@ Please save this username as you'll need it to log in.`;
                     toast.error(errorMessages);
                     return;
                 }
-                
+
                 // Handle general error message
                 if (errorData.error) {
                     setError(errorData.error);
                     toast.error(errorData.error);
                     return;
                 }
-                
+
                 // Fallback error handling
-                const errorMessage = typeof errorData === 'string' 
-                    ? errorData 
+                const errorMessage = typeof errorData === 'string'
+                    ? errorData
                     : 'Registration failed. Please check your information and try again.';
                 setError(errorMessage);
                 toast.error(errorMessage);
@@ -238,17 +247,34 @@ Please save this username as you'll need it to log in.`;
                                 onFocus={handleInputFocus}
                             />
                         </div>
-                        <div className="field-wrap">
-                            <label>
+                        <div className="field-wrap select-wrap">
+                            <label className={gender ? 'active' : ''}>
                                 Gender<span className="req">*</span>
                             </label>
                             <select
                                 required
                                 value={gender}
-                                onChange={(e) => handleInputChange(e, setGender)}
-                                onBlur={handleInputBlur}
-                                onFocus={handleInputFocus}
-                                style={{ color: "#000000" }}
+                                onChange={(e) => {
+                                    setGender(e.target.value);
+                                    const label = e.target.previousElementSibling;
+                                    if (e.target.value === '') {
+                                        label.classList.remove('active', 'highlight');
+                                    } else {
+                                        label.classList.add('active', 'highlight');
+                                    }
+                                }}
+                                onFocus={(e) => {
+                                    const label = e.target.previousElementSibling;
+                                    label.classList.add('active', 'highlight');
+                                }}
+                                onBlur={(e) => {
+                                    const label = e.target.previousElementSibling;
+                                    if (e.target.value === '') {
+                                        label.classList.remove('active', 'highlight');
+                                    } else {
+                                        label.classList.remove('highlight');
+                                    }
+                                }}
                             >
                                 <option value="">Select Gender</option>
                                 <option value="M">Male</option>

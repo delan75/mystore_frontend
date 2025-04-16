@@ -9,18 +9,43 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'));
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
+    const [loading, setLoading] = useState(false);
+
+    // Fetch full user profile when we have a token and user ID
+    const fetchUserProfile = async (userId) => {
+        if (!accessToken || !userId) return;
+
+        try {
+            setLoading(true);
+            const response = await axios.get(`http://127.0.0.1:8000/auth/users/${userId}/`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            console.log('User profile response:', response.data);
+            setUser(response.data);
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (accessToken) {
             try {
                 const decoded = jwtDecode(accessToken);
-                setUser({ id: decoded.user_id });
+                const userId = decoded.user_id;
+
+                // First set the basic user info with ID
+                setUser(prev => ({ ...prev, id: userId }));
+
+                // Then fetch the full profile
+                fetchUserProfile(userId);
             } catch (error) {
                 console.error('Invalid token:', error);
                 logout();
             }
         }
-    }, [accessToken]);
+    }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const login = async (username, password) => {
         const response = await axios.post('http://127.0.0.1:8000/auth/login/', {
@@ -56,7 +81,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, accessToken, login, register, logout }}>
+        <AuthContext.Provider value={{ user, accessToken, login, register, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
