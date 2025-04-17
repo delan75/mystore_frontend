@@ -150,9 +150,26 @@ export const CurrencyProvider = ({ children }) => {
     // Format options
     const { showCode = false, decimals = 2 } = options;
 
-    // Just format with the symbol for immediate display
-    // The actual conversion will happen via API calls
-    const formattedPrice = price.toFixed(decimals);
+    // For ZAR, no conversion needed
+    if (selectedCurrency.code === 'ZAR') {
+      const formattedPrice = price.toFixed(decimals);
+      return showCode
+        ? `${selectedCurrency.symbol}${formattedPrice} ${selectedCurrency.code}`
+        : `${selectedCurrency.symbol}${formattedPrice}`;
+    }
+
+    // For other currencies, provide a rough approximation based on exchange rate
+    // This is just for immediate display while the API call is in progress
+    // The actual accurate conversion will come from the backend API
+    let approximateAmount = price;
+
+    // If we have an exchange rate, use it for a rough approximation
+    if (selectedCurrency.exchange_rate) {
+      // Convert based on the exchange rate definition in the backend
+      approximateAmount = price * selectedCurrency.exchange_rate;
+    }
+
+    const formattedPrice = approximateAmount.toFixed(decimals);
 
     return showCode
       ? `${selectedCurrency.symbol}${formattedPrice} ${selectedCurrency.code}`

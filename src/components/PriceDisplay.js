@@ -4,10 +4,10 @@ import axios from '../utils/axios';
 
 /**
  * PriceDisplay component for displaying prices with accurate currency conversion
- * 
+ *
  * This component fetches the converted price from the backend API and displays it.
  * It shows a synchronous approximation while loading for better UX.
- * 
+ *
  * @param {number|string} price - The price in ZAR to display
  * @param {object} options - Display options
  * @param {boolean} options.showCode - Whether to show the currency code
@@ -20,21 +20,21 @@ const PriceDisplay = ({ price, options = {} }) => {
   const [loading, setLoading] = useState(true);
 
   // Parse price to ensure it's a number
-  const parsedPrice = typeof price === 'string' 
-    ? parseFloat(price.replace(/[^0-9.-]+/g, '')) 
+  const parsedPrice = typeof price === 'string'
+    ? parseFloat(price.replace(/[^0-9.-]+/g, ''))
     : price;
 
   useEffect(() => {
     // Reset state when currency or price changes
     setLoading(true);
     setConvertedPrice(null);
-    
+
     // Skip API call for invalid prices
     if (!selectedCurrency || isNaN(parsedPrice)) {
       setLoading(false);
       return;
     }
-    
+
     // Skip API call for ZAR currency (no conversion needed)
     if (selectedCurrency.code === 'ZAR') {
       setLoading(false);
@@ -48,11 +48,20 @@ const PriceDisplay = ({ price, options = {} }) => {
           from_currency: 'ZAR',
           to_currency: selectedCurrency.code
         });
-        
+
+        // Use the amount from the API response and format it ourselves
+        // This ensures consistency and avoids potential formatting issues from the backend
+        const amount = response.data.converted.amount;
+        const symbol = response.data.converted.symbol;
+        const currency = response.data.converted.currency;
+        const decimals = options.decimals || 2;
+
+        const formattedAmount = amount.toFixed(decimals);
+
         setConvertedPrice(
-          options.showCode 
-            ? `${response.data.converted.formatted} ${response.data.converted.currency}`
-            : response.data.converted.formatted
+          options.showCode
+            ? `${symbol}${formattedAmount} ${currency}`
+            : `${symbol}${formattedAmount}`
         );
       } catch (error) {
         console.error('Failed to convert price:', error);
