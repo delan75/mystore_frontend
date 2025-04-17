@@ -13,8 +13,12 @@ const Orders = ({ mode = 'my' }) => {
     const [orders, setOrders] = useState([]);
     const [expandedOrders, setExpandedOrders] = useState({});
     const [orderItems, setOrderItems] = useState({});
+    const [userNames, setUserNames] = useState({});
     const [loading, setLoading] = useState(true);
-    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [selectedOrders, setSelectedOrders] = useState([]);
+    const [bulkAction, setBulkAction] = useState('');
+    const [bulkActionStatus, setBulkActionStatus] = useState('pending');
+    const [processingBulkAction, setProcessingBulkAction] = useState(false);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -52,14 +56,54 @@ const Orders = ({ mode = 'my' }) => {
             if (mode === 'my') {
                 params.user = user?.id;
             }
-            // For 'manage' mode, we want all orders (no additional params needed)
+            // For 'manage' mode, we want all orders using the all orders endpoint
+            else if (mode === 'manage' && hasOrderManagementAccess) {
+                endpoint = '/orders/all/';
+            }
 
             const response = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${accessToken}` },
                 params: params
             });
 
-            setOrders(response.data.results || []);
+            const ordersData = response.data.results || [];
+            setOrders(ordersData);
+
+            // If in manage mode, fetch user names for all orders
+            if (mode === 'manage' && hasOrderManagementAccess) {
+                // Get unique user IDs from orders
+                const userIds = [...new Set(ordersData.map(order => order.user))];
+
+                // Fetch user names for each user ID that we don't already have
+                userIds.forEach(async (userId) => {
+                    if (!userNames[userId] && userId) {
+                        try {
+                            const userResponse = await axios.get(`/auth/users/${userId}/`, {
+                                headers: { Authorization: `Bearer ${accessToken}` }
+                            });
+                            // Get the first available name (first name, last name, or username)
+                            let displayName = userResponse.data.first_name || userResponse.data.last_name || userResponse.data.username || '';
+
+                            // Truncate to max 6 characters
+                            if (displayName.length > 6) {
+                                displayName = displayName.substring(0, 6) + '...';
+                            }
+
+                            setUserNames(prev => ({
+                                ...prev,
+                                [userId]: displayName
+                            }));
+                        } catch (error) {
+                            console.error(`Failed to fetch user details for ID ${userId}:`, error);
+                            // Set a fallback name if we can't fetch the user details
+                            setUserNames(prev => ({
+                                ...prev,
+                                [userId]: 'User'
+                            }));
+                        }
+                    }
+                });
+            }
 
             // Handle pagination if the API supports it
             if (response.data.count !== undefined) {
@@ -147,41 +191,49 @@ const Orders = ({ mode = 'my' }) => {
 
     // Handle order checkout
     const handleCheckout = async (orderId) => {
-        try {
-            // Set processing state
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.id === orderId ? { ...order, processing: true } : order
-                )
-            );
+        // Confirm checkout with the user
+        if (window.confirm('Are you sure you want to checkout this order? This will process payment for the order.')) {
+            try {
+                // Set processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: true } : order
+                    )
+                );
 
-            await axios.post(`/orders/${orderId}/checkout/`, {}, {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            });
+                // Call the checkout API
+                await axios.post(`/orders/${orderId}/checkout/`, {}, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
 
-            toast.success('Order checkout successful!');
+                toast.success('Order checkout successful!');
 
-            // Update the order in the UI
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.id === orderId ? {
-                        ...order,
-                        status: 'processing',
-                        processing: false
-                    } : order
-                )
-            );
-        } catch (error) {
-            console.error('Failed to checkout order:', error);
+                // Update the order in the UI
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? {
+                            ...order,
+                            status: 'processing',
+                            processing: false
+                        } : order
+                    )
+                );
 
-            // Remove processing state
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.id === orderId ? { ...order, processing: false } : order
-                )
-            );
+                // Navigate to dashboard after successful checkout
+                navigate('/dashboard');
+            } catch (error) {
+                console.error('Failed to checkout order:', error);
 
-            toast.error(error.response?.data?.error || 'Failed to checkout order');
+                // Remove processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: false } : order
+                    )
+                );
+
+                // Show error message
+                toast.error(error.response?.data?.error || 'Failed to checkout order');
+            }
         }
     };
 
@@ -205,6 +257,190 @@ const Orders = ({ mode = 'my' }) => {
         } catch (error) {
             console.error('Failed to update order status:', error);
             toast.error(error.response?.data?.error || 'Failed to update order status');
+        }
+    };
+
+    // Handle marking an order as delivered (customer only)
+    const handleMarkDelivered = async (orderId) => {
+        if (window.confirm('Has this order been delivered to you? Marking as delivered will complete the order.')) {
+            try {
+                // Set processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: true } : order
+                    )
+                );
+
+                // Call the mark-delivered API
+                await axios.post(`/orders/${orderId}/mark-delivered/`, {}, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+
+                toast.success('Order marked as delivered!');
+
+                // Update the order in the UI
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? {
+                            ...order,
+                            status: 'completed',
+                            processing: false
+                        } : order
+                    )
+                );
+            } catch (error) {
+                console.error('Failed to mark order as delivered:', error);
+
+                // Remove processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: false } : order
+                    )
+                );
+
+                toast.error(error.response?.data?.error || 'Failed to mark order as delivered');
+            }
+        }
+    };
+
+    // Handle deleting an order (admin/manager only)
+    const handleDeleteOrder = async (orderId) => {
+        if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+            try {
+                // Set processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: true } : order
+                    )
+                );
+
+                // Call the delete API
+                await axios.delete(`/orders/${orderId}/delete/`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+
+                toast.success('Order deleted successfully!');
+
+                // Remove the order from the UI
+                setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+            } catch (error) {
+                console.error('Failed to delete order:', error);
+
+                // Remove processing state
+                setOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? { ...order, processing: false } : order
+                    )
+                );
+
+                toast.error(error.response?.data?.error || 'Failed to delete order');
+            }
+        }
+    };
+
+
+
+    // Handle bulk operations
+    const handleBulkOperation = async () => {
+        if (selectedOrders.length === 0) {
+            toast.error('Please select at least one order');
+            return;
+        }
+
+        if (!bulkAction) {
+            toast.error('Please select an action');
+            return;
+        }
+
+        // For update_status operation, we need a status
+        if (bulkAction === 'update_status' && !bulkActionStatus) {
+            toast.error('Please select a status');
+            return;
+        }
+
+        // Confirm with the user
+        let confirmMessage = '';
+        switch (bulkAction) {
+            case 'cancel':
+                confirmMessage = `Are you sure you want to cancel ${selectedOrders.length} orders?`;
+                break;
+            case 'update_status':
+                confirmMessage = `Are you sure you want to update the status of ${selectedOrders.length} orders to ${bulkActionStatus}?`;
+                break;
+            case 'delete':
+                confirmMessage = `Are you sure you want to delete ${selectedOrders.length} orders? This action cannot be undone.`;
+                break;
+            case 'checkout':
+                confirmMessage = `Are you sure you want to checkout ${selectedOrders.length} orders?`;
+                break;
+            default:
+                toast.error('Invalid action');
+                return;
+        }
+
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            setProcessingBulkAction(true);
+
+            // Prepare the request payload
+            const payload = {
+                operation: bulkAction,
+                order_ids: selectedOrders
+            };
+
+            // Add status for update_status operation
+            if (bulkAction === 'update_status') {
+                payload.status = bulkActionStatus;
+            }
+
+            // Call the bulk operations API
+            const response = await axios.post('/orders/bulk/', payload, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+
+            // Handle the response
+            if (response.status === 200 || response.status === 207) {
+                toast.success(response.data.message);
+
+                // If there are failed orders, show a warning
+                if (response.data.failed_orders && response.data.failed_orders.length > 0) {
+                    const failedOrderNumbers = response.data.failed_orders.map(order => order.order_number).join(', ');
+                    toast.warning(`Some orders could not be processed: ${failedOrderNumbers}`);
+                }
+
+                // Refresh the orders list
+                fetchOrders(pagination.currentPage);
+
+                // Clear selections
+                setSelectedOrders([]);
+                setBulkAction('');
+            }
+        } catch (error) {
+            console.error('Failed to perform bulk operation:', error);
+            toast.error(error.response?.data?.error || 'Failed to perform bulk operation');
+        } finally {
+            setProcessingBulkAction(false);
+        }
+    };
+
+    // Handle selecting/deselecting all orders
+    const handleSelectAllOrders = (e) => {
+        if (e.target.checked) {
+            setSelectedOrders(orders.map(order => order.id));
+        } else {
+            setSelectedOrders([]);
+        }
+    };
+
+    // Handle selecting/deselecting a single order
+    const handleSelectOrder = (orderId, isChecked) => {
+        if (isChecked) {
+            setSelectedOrders(prev => [...prev, orderId]);
+        } else {
+            setSelectedOrders(prev => prev.filter(id => id !== orderId));
         }
     };
 
@@ -281,7 +517,6 @@ const Orders = ({ mode = 'my' }) => {
 
     // Handle new order creation
     const handleOrderCreated = (newOrder) => {
-        setShowCreateForm(false);
         toast.success(`Order #${newOrder.order_number} created successfully`);
         fetchOrders(1); // Refresh the orders list and go to first page
     };
@@ -380,6 +615,46 @@ const Orders = ({ mode = 'my' }) => {
                                 <i className="fas fa-times"></i> Cancel
                             </button>
                         </>
+                    )}
+
+                    {/* Mark as Delivered button for customers (only for shipped orders) */}
+                    {mode === 'my' && order.status === 'shipped' && (
+                        <button
+                            className="btn-delivered"
+                            onClick={() => handleMarkDelivered(order.id)}
+                            disabled={order.processing}
+                            title="Mark as Delivered"
+                        >
+                            {order.processing ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i> Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-check-circle"></i> Mark Delivered
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {/* Delete Order button for admins and managers */}
+                    {canModifyOrders && (
+                        <button
+                            className="btn-delete"
+                            onClick={() => handleDeleteOrder(order.id)}
+                            disabled={order.processing}
+                            title="Delete Order"
+                        >
+                            {order.processing ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-trash"></i>
+                                </>
+                            )}
+                        </button>
                     )}
 
                     {(order.status === 'shipped' || order.status === 'completed') && (
@@ -522,14 +797,78 @@ const Orders = ({ mode = 'my' }) => {
                             </div>
                         ) : (
                             <>
+                                {/* Bulk Actions UI - Only show for admins in manage mode */}
+                                {mode === 'manage' && isAdmin && (
+                                    <div className="bulk-actions-container mb-3">
+                                        <div className="bulk-actions-controls">
+                                            <select
+                                                className="bulk-action-select"
+                                                value={bulkAction}
+                                                onChange={(e) => setBulkAction(e.target.value)}
+                                                disabled={processingBulkAction || selectedOrders.length === 0}
+                                            >
+                                                <option value="">Select Action</option>
+                                                <option value="cancel">Cancel Orders</option>
+                                                <option value="update_status">Update Status</option>
+                                                <option value="delete">Delete Orders</option>
+                                                <option value="checkout">Checkout Orders</option>
+                                            </select>
+
+                                            {bulkAction === 'update_status' && (
+                                                <select
+                                                    className="bulk-status-select"
+                                                    value={bulkActionStatus}
+                                                    onChange={(e) => setBulkActionStatus(e.target.value)}
+                                                    disabled={processingBulkAction}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="paid">Paid</option>
+                                                    <option value="processing">Processing</option>
+                                                    <option value="shipped">Shipped</option>
+                                                    <option value="completed">Completed</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                </select>
+                                            )}
+
+                                            <button
+                                                className="btn-apply-bulk-action"
+                                                onClick={handleBulkOperation}
+                                                disabled={processingBulkAction || !bulkAction || selectedOrders.length === 0}
+                                            >
+                                                {processingBulkAction ? (
+                                                    <><i className="fas fa-spinner fa-spin"></i> Processing...</>
+                                                ) : (
+                                                    <>Apply</>
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        <div className="selected-count">
+                                            {selectedOrders.length} {selectedOrders.length === 1 ? 'order' : 'orders'} selected
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="table-responsive">
                                     <table className="table">
                                         <thead>
                                             <tr>
+                                                {/* Checkbox column - Only show for admins in manage mode */}
+                                                {mode === 'manage' && isAdmin && (
+                                                    <th className="checkbox-column">
+                                                        <input
+                                                            type="checkbox"
+                                                            onChange={handleSelectAllOrders}
+                                                            checked={selectedOrders.length > 0 && selectedOrders.length === orders.length}
+                                                            disabled={processingBulkAction}
+                                                        />
+                                                    </th>
+                                                )}
                                                 <th>Order Number</th>
                                                 <th>Date</th>
                                                 <th>Total Amount</th>
                                                 <th>Status</th>
+                                                {mode === 'manage' && <th>Customer</th>}
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -537,6 +876,17 @@ const Orders = ({ mode = 'my' }) => {
                                             {orders.map(order => (
                                                 <React.Fragment key={order.id}>
                                                     <tr>
+                                                        {/* Checkbox column - Only show for admins in manage mode */}
+                                                        {mode === 'manage' && isAdmin && (
+                                                            <td className="checkbox-column">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedOrders.includes(order.id)}
+                                                                    onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                                                                    disabled={processingBulkAction}
+                                                                />
+                                                            </td>
+                                                        )}
                                                         <td>{order.order_number}</td>
                                                         <td>{new Date(order.created_at).toLocaleDateString()}</td>
                                                         <td>{selectedCurrency ? formatPriceSync(order.total_amount) : 'Loading...'}</td>
@@ -548,6 +898,11 @@ const Orders = ({ mode = 'my' }) => {
                                                                 {hasManagementAccess && renderStatusOptions(order)}
                                                             </div>
                                                         </td>
+                                                        {mode === 'manage' && (
+                                                            <td className="customer-name">
+                                                                {userNames[order.user] || 'Loading...'}
+                                                            </td>
+                                                        )}
                                                         <td>
                                                             {renderActionButtons(order)}
                                                         </td>
@@ -556,7 +911,7 @@ const Orders = ({ mode = 'my' }) => {
                                                     {/* Order Items (Expanded View) */}
                                                     {expandedOrders[order.id] && (
                                                         <tr className="order-details-row">
-                                                            <td colSpan="5">
+                                                            <td colSpan={mode === 'manage' ? (isAdmin ? "7" : "6") : "5"}>
                                                                 <div className="order-details">
                                                                     <h6 className="order-details-title">Order Items</h6>
 

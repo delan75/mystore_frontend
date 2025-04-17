@@ -198,12 +198,91 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+/* Customer name column */
+.customer-name {
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Bulk Actions Styles */
+.bulk-actions-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.bulk-actions-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.bulk-action-select,
+.bulk-status-select {
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  min-width: 150px;
+}
+
+.btn-apply-bulk-action {
+  background-color: #1ab188;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.btn-apply-bulk-action:hover {
+  background-color: #179b77;
+}
+
+.btn-apply-bulk-action:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.selected-count {
+  font-weight: 500;
+  color: #495057;
+}
+
+/* Checkbox column */
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-column input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
 }
 
 .btn-view,
 .btn-checkout,
 .btn-cancel,
-.btn-return {
+.btn-return,
+.btn-delivered,
+.btn-delete {
+  min-width: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -269,17 +348,45 @@
   border-color: #ffc107;
 }
 
+.btn-delivered {
+  color: #28a745;
+  background-color: transparent;
+  border-color: #28a745;
+}
+
+.btn-delivered:hover:not(:disabled) {
+  color: #fff;
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-delete {
+  color: #dc3545;
+  background-color: transparent;
+  border-color: #dc3545;
+}
+
+.btn-delete:hover:not(:disabled) {
+  color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
 .btn-view i,
 .btn-checkout i,
 .btn-cancel i,
-.btn-return i {
+.btn-return i,
+.btn-delivered i,
+.btn-delete i {
   margin-right: 0.25rem;
 }
 
 .btn-view:disabled,
 .btn-checkout:disabled,
 .btn-cancel:disabled,
-.btn-return:disabled {
+.btn-return:disabled,
+.btn-delivered:disabled,
+.btn-delete:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -460,13 +567,63 @@
   }
 
   .action-buttons {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    justify-content: flex-start;
   }
 
   .btn-view,
   .btn-checkout,
   .btn-cancel,
-  .btn-return {
+  .btn-return,
+  .btn-delivered,
+  .btn-delete {
+    min-width: 40px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  /* Hide text on small screens, show only icons */
+  .btn-delete span,
+  .btn-view span {
+    display: none;
+  }
+
+  /* Make the table more compact on mobile */
+  .table th,
+  .table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  /* Ensure the customer column doesn't take too much space */
+  .customer-name {
+    max-width: 80px;
+  }
+
+  /* Mobile styles for bulk actions */
+  .bulk-actions-container {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .bulk-actions-controls {
+    flex-wrap: wrap;
     width: 100%;
+  }
+
+  .bulk-action-select,
+  .bulk-status-select {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .selected-count {
+    width: 100%;
+    text-align: left;
+    margin-top: 5px;
   }
 }

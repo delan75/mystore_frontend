@@ -9,9 +9,9 @@ const Layout = ({ children }) => {
     const { user, logout, loading } = useAuth();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showProductsSubmenu, setShowProductsSubmenu] = useState(true); // Start with submenu open
-    const [showCategoriesSubmenu, setShowCategoriesSubmenu] = useState(true); // Start with submenu open
-    const [showOrdersSubmenu, setShowOrdersSubmenu] = useState(true); // Start with submenu open
+    const [showProductsSubmenu, setShowProductsSubmenu] = useState(true);
+    const [showCategoriesSubmenu, setShowCategoriesSubmenu] = useState(true);
+    const [showOrdersSubmenu, setShowOrdersSubmenu] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef(null);
 
@@ -36,11 +36,23 @@ const Layout = ({ children }) => {
         ).join('/');
     };
 
-    // Close dropdown when clicking outside
+    // Reference for the sidebar
+    const sidebarRef = useRef(null);
+
+    // Close dropdown and sidebar when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Close profile dropdown when clicking outside
             if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
                 setShowProfileDropdown(false);
+            }
+
+            // Close sidebar on mobile when clicking outside
+            if (sidebarRef.current &&
+                !sidebarRef.current.contains(event.target) &&
+                sidebarOpen &&
+                window.innerWidth < 768) { // Only on mobile
+                setSidebarOpen(false);
             }
         };
 
@@ -48,7 +60,7 @@ const Layout = ({ children }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [sidebarOpen]);
 
     const handleLogout = async () => {
         await logout();
@@ -63,17 +75,35 @@ const Layout = ({ children }) => {
 
     return (
         <div className="min-h-screen flex">
+            {/* Mobile overlay */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
             {/* Left Sidebar */}
             <aside
+                ref={sidebarRef}
                 className={`bg-[#13232f] fixed inset-y-0 left-0 w-64 transform ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 } md:translate-x-0 transition-transform duration-300 ease-in-out z-40`}
             >
                 <div className="p-4 flex flex-col h-full">
-                    <Link to="/dashboard" className="flex items-center mb-8">
-                        <i className="fas fa-store mr-2 text-white"></i>
-                        <h2 className="text-2xl text-white font-semibold">MyStore</h2>
-                    </Link>
+                    <div className="flex items-center justify-between mb-8">
+                        <Link to="/dashboard" className="flex items-center">
+                            <i className="fas fa-store mr-2 text-white"></i>
+                            <h2 className="text-2xl text-white font-semibold">MyStore</h2>
+                        </Link>
+                        {/* Close button for mobile */}
+                        <button
+                            className="md:hidden text-white hover:text-[#1ab188] focus:outline-none"
+                            onClick={() => setSidebarOpen(false)}
+                        >
+                            <i className="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                     <nav className="flex-grow">
                         <ul className="space-y-2">
                             <li>
@@ -281,10 +311,10 @@ const Layout = ({ children }) => {
                                 <div className="relative" ref={profileDropdownRef}>
                                     {/* Profile Trigger */}
                                     <div
-                                        className="flex items-center cursor-pointer"
+                                        className="flex flex-col items-center cursor-pointer px-2"
                                         onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                     >
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 overflow-hidden">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                                             <img
                                                 src={user.avatar_url || placeholderAvatar}
                                                 alt="Profile"
@@ -295,7 +325,7 @@ const Layout = ({ children }) => {
                                                 }}
                                             />
                                         </div>
-                                        <span className="text-gray-700">{user.username || 'User'}</span>
+                                        <span className="text-gray-700 text-xs mt-1 max-w-[60px] truncate">{user.username || 'User'}</span>
                                     </div>
 
                                     {/* Dropdown Menu */}
