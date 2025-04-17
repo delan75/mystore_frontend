@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
+import '../styles/CategoryForm.css';
 
 const AddCategory = () => {
     const { user, accessToken } = useAuth();
@@ -24,7 +25,7 @@ const AddCategory = () => {
             if (!accessToken) return;
 
             try {
-                const response = await axios.get('http://localhost:8000/store/categories/', {
+                const response = await axios.get('/store/categories/', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                     }
@@ -54,7 +55,7 @@ const AddCategory = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!category.name) {
             toast.error('Category name is required');
             return;
@@ -62,11 +63,11 @@ const AddCategory = () => {
 
         try {
             setLoading(true);
-            await axios.post('http://localhost:8000/store/categories/', 
+            await axios.post('/store/categories/',
                 category,
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
-            
+
             toast.success('Category created successfully');
             navigate('/categories');
         } catch (error) {
@@ -89,14 +90,20 @@ const AddCategory = () => {
     }
 
     return (
-        <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Add Category</h1>
-            
-            <div className="bg-white rounded-lg shadow p-6">
+        <div className="category-form-container p-4">
+            <div className="category-form-header mb-4">
+                <h1 className="category-form-title">Add Category</h1>
+                <Link to="/categories" className="btn-back">
+                    <i className="fas fa-arrow-left"></i>
+                    Back to Categories
+                </Link>
+            </div>
+
+            <div className="category-form-card">
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                            Category Name *
+                    <div className="form-group">
+                        <label htmlFor="name">
+                            Category Name <span className="required">*</span>
                         </label>
                         <input
                             type="text"
@@ -104,14 +111,13 @@ const AddCategory = () => {
                             name="name"
                             value={category.name}
                             onChange={handleInputChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             placeholder="Enter category name"
                             required
                         />
                     </div>
-                    
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="slug">
+
+                    <div className="form-group">
+                        <label htmlFor="slug">
                             Slug
                         </label>
                         <input
@@ -120,16 +126,15 @@ const AddCategory = () => {
                             name="slug"
                             value={category.slug}
                             onChange={handleInputChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             placeholder="Enter slug (auto-generated if left empty)"
                         />
-                        <p className="text-sm text-gray-500 mt-1">
+                        <div className="form-help-text">
                             The "slug" is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.
-                        </p>
+                        </div>
                     </div>
-                    
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+
+                    <div className="form-group">
+                        <label htmlFor="description">
                             Description
                         </label>
                         <textarea
@@ -137,14 +142,13 @@ const AddCategory = () => {
                             name="description"
                             value={category.description}
                             onChange={handleInputChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             placeholder="Enter category description"
                             rows="4"
                         ></textarea>
                     </div>
-                    
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="parent">
+
+                    <div className="form-group">
+                        <label htmlFor="parent">
                             Parent Category
                         </label>
                         <select
@@ -152,7 +156,6 @@ const AddCategory = () => {
                             name="parent"
                             value={category.parent}
                             onChange={handleInputChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         >
                             <option value="">None (Top Level Category)</option>
                             {parentCategories.map(parent => (
@@ -162,19 +165,19 @@ const AddCategory = () => {
                             ))}
                         </select>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
+
+                    <div className="form-actions">
                         <button
                             type="button"
                             onClick={() => navigate('/categories')}
-                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            className="btn-cancel"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-[#1ab188] hover:bg-[#179b77] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                            className="btn-save"
                         >
                             {loading && <i className="fas fa-spinner fa-spin mr-2"></i>}
                             Save Category

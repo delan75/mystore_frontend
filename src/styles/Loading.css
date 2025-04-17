@@ -1,0 +1,18 @@
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.spinner {
+  margin-bottom: 1rem;
+  color: #1ab188;
+}
+
+.loading-screen p {
+  font-size: 1.25rem;
+  color: #13232f;
+}
