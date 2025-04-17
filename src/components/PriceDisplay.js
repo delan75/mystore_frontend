@@ -49,19 +49,11 @@ const PriceDisplay = ({ price, options = {} }) => {
           to_currency: selectedCurrency.code
         });
 
-        // Use the amount from the API response and format it ourselves
-        // This ensures consistency and avoids potential formatting issues from the backend
-        const amount = response.data.converted.amount;
-        const symbol = response.data.converted.symbol;
-        const currency = response.data.converted.currency;
-        const decimals = options.decimals || 2;
-
-        const formattedAmount = amount.toFixed(decimals);
-
+        // Now that the backend formatting is fixed, we can use the formatted value directly
         setConvertedPrice(
           options.showCode
-            ? `${symbol}${formattedAmount} ${currency}`
-            : `${symbol}${formattedAmount}`
+            ? `${response.data.converted.formatted} ${response.data.converted.currency}`
+            : response.data.converted.formatted
         );
       } catch (error) {
         console.error('Failed to convert price:', error);
