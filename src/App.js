@@ -2,14 +2,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { useAuth } from './hooks/useAuth';
-import Layout from './components/Layout';
+import PrivateRoute from './components/PrivateRoute';
 import AuthPage from './pages/AuthPage';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Shop from './pages/Shop';
 import Products from './pages/Products';
 import AddProduct from './pages/AddProduct';
+import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import Chats from './pages/Chats';
 import Support from './pages/Support';
@@ -23,158 +25,89 @@ import AddCategory from './pages/AddCategory';
 import EditCategory from './pages/EditCategory';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './styles/Loading.css';
 
-const ProtectedRoute = ({ children }) => {
-    const { accessToken } = useAuth();
-    // If we have an access token, the user is authenticated
-    return accessToken ? children : <Navigate to="/auth" />;
-};
-
+// Check if user has manager or admin role
 const ManagerRoute = ({ children }) => {
-    const { user, accessToken } = useAuth();
-    // First check if user is authenticated
-    if (!accessToken) return <Navigate to="/auth" />;
+    const { user, loading } = useAuth();
 
-    // Then check if user has the right role
-    return (user?.role === 'manager' || user?.role === 'admin') ?
-        children :
-        <Navigate to="/dashboard" />;
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner">
+                    <i className="fas fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    // Check if user has the right role
+    if (!user || (user.role !== 'manager' && user.role !== 'admin')) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return children;
 };
 
 function App() {
     return (
         <AuthProvider>
-            <Router>
+            <CurrencyProvider>
+                <Router>
                 <Routes>
                     {/* Public routes */}
                     <Route path="/auth" element={<AuthPage />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/shop" element={<Shop />} />
 
-                    {/* Protected routes with Layout */}
-                    <Route path="/" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Navigate to="/dashboard" replace />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
+                    {/* Protected routes using PrivateRoute component */}
+                    <Route element={<PrivateRoute />}>
+                        {/* Default route redirects to dashboard */}
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                    <Route path="/dashboard" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Dashboard />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
+                        {/* Regular user routes */}
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/products" element={<Products />} />
+                        <Route path="/orders" element={<Orders />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/chats" element={<Chats />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/account-settings" element={<AccountSettings />} />
+                        <Route path="/privacy" element={<PrivacyCenter />} />
+                        <Route path="/feedback" element={<Feedback />} />
+                        <Route path="/history" element={<History />} />
+                        <Route path="/settings" element={<Settings />} />
 
-                    <Route path="/products" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Products />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/products/add" element={
-                        <ManagerRoute>
-                            <Layout>
+                        {/* Manager/Admin only routes */}
+                        <Route path="/products/add" element={
+                            <ManagerRoute>
                                 <AddProduct />
-                            </Layout>
-                        </ManagerRoute>
-                    } />
+                            </ManagerRoute>
+                        } />
 
-                    <Route path="/profile" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Profile />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/chats" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Chats />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/support" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Support />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/account-settings" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <AccountSettings />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/privacy" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <PrivacyCenter />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/feedback" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Feedback />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/history" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <History />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/settings" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <Settings />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    {/* Category Routes - Only accessible to managers and admins */}
-                    <Route path="/categories" element={
-                        <ManagerRoute>
-                            <Layout>
+                        <Route path="/categories" element={
+                            <ManagerRoute>
                                 <Categories />
-                            </Layout>
-                        </ManagerRoute>
-                    } />
+                            </ManagerRoute>
+                        } />
 
-                    <Route path="/categories/add" element={
-                        <ManagerRoute>
-                            <Layout>
+                        <Route path="/categories/add" element={
+                            <ManagerRoute>
                                 <AddCategory />
-                            </Layout>
-                        </ManagerRoute>
-                    } />
+                            </ManagerRoute>
+                        } />
 
-                    <Route path="/categories/edit/:id" element={
-                        <ManagerRoute>
-                            <Layout>
+                        <Route path="/categories/edit/:id" element={
+                            <ManagerRoute>
                                 <EditCategory />
-                            </Layout>
-                        </ManagerRoute>
-                    } />
+                            </ManagerRoute>
+                        } />
+                    </Route>
                 </Routes>
                 <ToastContainer />
-            </Router>
+                </Router>
+            </CurrencyProvider>
         </AuthProvider>
     );
 }

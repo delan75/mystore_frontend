@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
+import CurrencySelector from './CurrencySelector';
+import placeholderAvatar from '../assets/placeholder-avatar.svg';
 
 const Layout = ({ children }) => {
     const { user, logout, loading } = useAuth();
@@ -210,6 +212,11 @@ const Layout = ({ children }) => {
 
                         {/* Right Side Nav Items */}
                         <div className="flex items-center space-x-4 ml-auto mr-2">
+                            {/* Currency Selector */}
+                            <div className="mr-4">
+                                <CurrencySelector />
+                            </div>
+
                             {/* Email Icon */}
                             <div className="text-gray-600 cursor-pointer">
                                 <i className="fas fa-envelope text-xl"></i>
@@ -225,12 +232,12 @@ const Layout = ({ children }) => {
                                     >
                                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 overflow-hidden">
                                             <img
-                                                src={user.avatar_url || 'https://via.placeholder.com/40'}
+                                                src={user.avatar_url || placeholderAvatar}
                                                 alt="Profile"
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
                                                     e.target.onerror = null;
-                                                    e.target.src = 'https://via.placeholder.com/40';
+                                                    e.target.src = placeholderAvatar;
                                                 }}
                                             />
                                         </div>
@@ -245,12 +252,12 @@ const Layout = ({ children }) => {
                                                 <div className="flex items-center">
                                                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-3 overflow-hidden">
                                                         <img
-                                                            src={user.avatar_url || 'https://via.placeholder.com/48'}
+                                                            src={user.avatar_url || placeholderAvatar}
                                                             alt="Profile"
                                                             className="w-full h-full object-cover"
                                                             onError={(e) => {
                                                                 e.target.onerror = null;
-                                                                e.target.src = 'https://via.placeholder.com/48';
+                                                                e.target.src = placeholderAvatar;
                                                             }}
                                                         />
                                                     </div>

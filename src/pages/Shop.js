@@ -3,10 +3,13 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useCurrency } from '../context/CurrencyContext';
+import PriceDisplay from '../components/PriceDisplay';
 
 const Shop = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    // Currency conversion is handled by PriceDisplay component
     const [filters, setFilters] = useState({
         category: '',
         minPrice: '',
@@ -204,7 +207,9 @@ const Shop = () => {
                                         />
                                         <div className="p-4">
                                             <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
-                                            <p className="text-xl font-bold text-blue-600 mb-4">${product.price}</p>
+                                            <p className="text-xl font-bold text-blue-600 mb-4">
+                                                <PriceDisplay price={product.price} options={{ className: 'product-price' }} />
+                                            </p>
                                             <button
                                                 onClick={() => handleAddToCart(product)}
                                                 className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"

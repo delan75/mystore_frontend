@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600&display=swap');
+
 *, *:before, *:after {
     box-sizing: border-box;
 }
@@ -32,6 +34,14 @@ a:hover {
     margin: 40px auto;
     border-radius: 4px;
     box-shadow: 0 4px 10px 4px rgba(19, 35, 47, 0.3);
+}
+
+.tab-content {
+    display: block;
+}
+
+#reset-password {
+    display: block;
 }
 
 .tab-group {
@@ -87,6 +97,8 @@ label {
     left: 13px;
     color: rgba(255, 255, 255, 0.5);
     transition: all 0.25s ease;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
     pointer-events: none;
     font-size: 22px;
 }
@@ -110,7 +122,7 @@ label.highlight {
     color: #ffffff;
 }
 
-input, textarea {
+input, select {
     font-size: 22px;
     display: block;
     width: 100%;
@@ -124,19 +136,153 @@ input, textarea {
     transition: border-color .25s ease, box-shadow .25s ease;
 }
 
-input:focus, textarea:focus {
-    outline: 0;
-    border-color: #1ab188;
+/* Ensure auth form select elements have white text */
+.form select {
+    color: #ffffff !important;
+    background-color: rgba(19, 35, 47, 0.9) !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
-textarea {
-    border: 2px solid #a0b3b0;
-    resize: vertical;
+/* Override Bootstrap styles for auth forms */
+.form select option {
+    background-color: #13232f !important;
+    color: #ffffff !important;
+}
+
+/* Specific style for auth select */
+.auth-select {
+    color: #ffffff !important;
+    background-color: rgba(19, 35, 47, 0.9) !important;
+}
+
+/* Fix for auth form labels */
+.form .field-wrap label {
+    color: rgba(255, 255, 255, 0.5);
+    transform: translateY(6px);
+}
+
+.form .field-wrap label.active {
+    transform: translateY(-25px);
+    left: 2px;
+    font-size: 14px;
+}
+
+/* Input wrappers */
+.password-input-wrapper,
+.input-wrapper {
+    position: relative;
+}
+
+/* Invalid input styling */
+input.invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 3px rgba(239, 68, 68, 0.5);
+}
+
+/* Password strength indicator */
+.password-strength {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    z-index: 10;
+    background-color: rgba(19, 35, 47, 0.8);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Password match indicator */
+.password-match-indicator,
+.validation-error {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    font-size: 16px;
+}
+
+/* Tooltip for validation errors */
+.validation-error .tooltip {
+    position: absolute;
+    right: 25px;
+    top: 0;
+    background-color: rgba(19, 35, 47, 0.9);
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    display: none;
+}
+
+.validation-error:hover .tooltip {
+    display: block;
+}
+
+/* FontAwesome icon colors */
+.text-red-500 {
+    color: #ef4444;
+}
+
+.text-orange-500 {
+    color: #f97316;
+}
+
+.text-yellow-500 {
+    color: #eab308;
+}
+
+.text-blue-500 {
+    color: #3b82f6;
+}
+
+.text-green-500 {
+    color: #22c55e;
+}
+
+input:focus, select:focus {
+    outline: 0;
+    border-color: #1ab188;
 }
 
 .field-wrap {
     position: relative;
     margin-bottom: 40px;
+}
+
+.field-wrap label {
+    position: absolute;
+    transform: translateY(6px);
+    left: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.25s ease;
+    pointer-events: none;
+}
+
+.field-wrap input {
+    font-size: 22px;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 5px 10px;
+    background: none;
+    background-image: none;
+    border: 1px solid #a0b3b0;
+    color: #ffffff;
+    border-radius: 0;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.field-wrap input:focus {
+    outline: 0;
+    border-color: #1ab188;
 }
 
 .top-row:after {
@@ -166,7 +312,7 @@ textarea {
     letter-spacing: .1em;
     background: #1ab188;
     color: #ffffff;
-    transition: all 0.5s ease;
+    transition: all .5s ease;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -184,126 +330,3 @@ textarea {
     margin-top: -20px;
     text-align: right;
 }
-
-.forgot a {
-    color: #1ab188;
-    text-decoration: none;
-}
-
-.forgot a:hover {
-    color: #179b77;
-}
-
-/* Error message styling */
-.text-red-500 {
-    color: #ef4444;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.mb-4 {
-    margin-bottom: 1rem;
-}
-
-/* Dashboard specific styles */
-.sidebar {
-    background: linear-gradient(to bottom, #13232f, #1a2f3d);
-    transition: all 0.3s ease;
-}
-
-.sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease;
-    padding: 0.75rem 1rem;
-    border-radius: 0.375rem;
-}
-
-.sidebar .nav-link:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.sidebar .nav-link.active {
-    color: #fff;
-    background: #1ab188;
-}
-
-@media (min-width: 768px) {
-    .ms-md-64 {
-        margin-left: 16rem;
-    }
-}
-
-/* Card hover effect */
-.card {
-    transition: transform 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-}
-
-/* Custom colors matching your theme */
-.btn-primary {
-    background-color: #1ab188;
-    border-color: #1ab188;
-}
-
-.btn-primary:hover {
-    background-color: #179b77;
-    border-color: #179b77;
-}
-
-.text-primary {
-    color: #1ab188 !important;
-}
-
-/* Products table styles */
-.table th {
-    font-weight: 600;
-    background-color: #f8f9fa;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-.form-switch .form-check-input {
-    cursor: pointer;
-}
-
-.form-switch .form-check-input:checked {
-    background-color: #1ab188;
-    border-color: #1ab188;
-}
-
-/* Pagination styles */
-.page-link {
-    color: #13232f;
-    border-color: #dee2e6;
-}
-
-.page-link:hover {
-    color: #1ab188;
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-}
-
-.page-item.disabled .page-link {
-    color: #6c757d;
-    background-color: #fff;
-    border-color: #dee2e6;
-}
-
-/* Button group styles */
-.btn-group .btn {
-    padding: 0.25rem 0.5rem;
-}
-
-.btn-group .btn i {
-    font-size: 0.875rem;
-}
-
-
