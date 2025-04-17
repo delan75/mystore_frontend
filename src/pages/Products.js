@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 
 const Products = () => {
     const { user, accessToken } = useAuth();
     const navigate = useNavigate();
+    const { formatPriceSync, selectedCurrency } = useCurrency();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState({});
     const [loading, setLoading] = useState(true);
@@ -20,11 +22,11 @@ const Products = () => {
     const hasManagementAccess = user?.role === 'manager' || user?.role === 'admin';
 
     const fetchCategories = async () => {
-        if (!accessToken) return;
+        if (!accessToken || !hasManagementAccess) return;
 
         try {
             // Try to fetch from categories/tree endpoint first
-            const response = await axios.get('http://localhost:8000/store/categories/tree/', {
+            const response = await axios.get('/store/categories/tree/', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                 }
@@ -44,20 +46,29 @@ const Products = () => {
             processCategories(response.data);
             setCategories(categoryMap);
         } catch (error) {
-            console.error('Failed to fetch categories:', error);
+            console.error('Failed to fetch categories from tree endpoint:', error);
             // If the tree endpoint fails, try the flat categories endpoint
             try {
-                const response = await axios.get('http://localhost:8000/store/categories/', {
+                const response = await axios.get('/store/categories/', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
+                    },
+                    params: {
+                        page_size: 100 // Get more categories at once
                     }
                 });
 
                 const categoryMap = {};
-                response.data.forEach(category => {
-                    categoryMap[category.id] = category.name;
-                });
-                setCategories(categoryMap);
+                const categoriesData = response.data.results || response.data;
+
+                if (Array.isArray(categoriesData)) {
+                    categoriesData.forEach(category => {
+                        categoryMap[category.id] = category.name;
+                    });
+                    setCategories(categoryMap);
+                } else {
+                    console.error('Unexpected categories data format:', response.data);
+                }
             } catch (fallbackError) {
                 console.error('Failed to fetch categories (fallback):', fallbackError);
             }
@@ -69,13 +80,31 @@ const Products = () => {
 
         try {
             setLoading(true);
-            const response = await axios.get(`http://localhost:8000/store/products/?page=${page}`, {
+            const response = await axios.get(`/store/products/`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
+                },
+                params: {
+                    page: page
                 }
             });
 
-            setProducts(response.data.results);
+            // Process the products data
+            const productsData = response.data.results;
+
+            // If we have category data and we're an admin/manager, update any missing categories
+            if (hasManagementAccess) {
+                const missingCategories = productsData
+                    .map(product => product.category)
+                    .filter(categoryId => !categories[categoryId]);
+
+                if (missingCategories.length > 0) {
+                    // If we're missing category names, fetch them again
+                    fetchCategories();
+                }
+            }
+
+            setProducts(productsData);
             setPagination({
                 currentPage: page,
                 totalPages: Math.ceil(response.data.count / 10),
@@ -83,6 +112,7 @@ const Products = () => {
                 hasPrevious: !!response.data.previous
             });
         } catch (error) {
+            console.error('Failed to fetch products:', error);
             if (error.response?.status === 403) {
                 toast.error('You do not have permission to view products');
                 navigate('/dashboard');
@@ -98,10 +128,15 @@ const Products = () => {
     };
 
     useEffect(() => {
-        // Only fetch products if we have an access token
+        // Only fetch data if we have an access token
         if (accessToken) {
-            fetchCategories();
-            fetchProducts(pagination.currentPage);
+            const initData = async () => {
+                // First fetch categories, then products
+                await fetchCategories();
+                fetchProducts(pagination.currentPage);
+            };
+
+            initData();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.currentPage, accessToken]);
@@ -109,7 +144,7 @@ const Products = () => {
     const handleDeleteProduct = async (productId) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
-                await axios.delete(`http://localhost:8000/store/products/${productId}/`, {
+                await axios.delete(`/store/products/${productId}/`, {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 });
                 toast.success('Product deleted successfully');
@@ -122,7 +157,7 @@ const Products = () => {
 
     const handleToggleStatus = async (productId, currentStatus) => {
         try {
-            await axios.patch(`http://localhost:8000/store/products/${productId}/`,
+            await axios.patch(`/store/products/${productId}/`,
                 { is_available: !currentStatus },
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
@@ -163,8 +198,13 @@ const Products = () => {
                                         {products.map((product) => (
                                             <tr key={product.id}>
                                                 <td>{product.name}</td>
-                                                <td>${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</td>
-                                                <td>{categories[product.category] || `Category ${product.category}`}</td>
+                                                <td>{selectedCurrency ? formatPriceSync(product.price) : 'Loading...'}</td>
+                                                <td>
+                                                    {hasManagementAccess
+                                                        ? (categories[product.category] || `Category ${product.category}`)
+                                                        : `Category ${product.category}`
+                                                    }
+                                                </td>
                                                 <td>
                                                     <span className={`badge ${product.is_available ? 'bg-success' : 'bg-secondary'}`}>
                                                         {product.is_available ? 'Available' : 'Not Available'}
@@ -242,7 +282,7 @@ const Products = () => {
                                             <tr key={product.id}>
                                                 <td>{product.id}</td>
                                                 <td>{product.name}</td>
-                                                <td>${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</td>
+                                                <td>{selectedCurrency ? formatPriceSync(product.price) : 'Loading...'}</td>
                                                 <td>{categories[product.category] || `Category ${product.category}`}</td>
                                                 <td>
                                                     <div className="form-check form-switch">
