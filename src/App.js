@@ -50,6 +50,29 @@ const ManagerRoute = ({ children }) => {
     return children;
 };
 
+// Check if user has order management access (admin, manager, or cashier)
+const OrderManagementRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner">
+                    <i className="fas fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    // Check if user has the right role
+    if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'cashier')) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return children;
+};
+
 function App() {
     return (
         <AuthProvider>
@@ -69,7 +92,14 @@ function App() {
                         {/* Regular user routes */}
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/products" element={<Products />} />
-                        <Route path="/orders" element={<Orders />} />
+                        <Route path="/orders" element={<Navigate to="/orders/my" replace />} />
+                        <Route path="/orders/create" element={<Orders mode="create" />} />
+                        <Route path="/orders/my" element={<Orders mode="my" />} />
+                        <Route path="/orders/manage" element={
+                            <OrderManagementRoute>
+                                <Orders mode="manage" />
+                            </OrderManagementRoute>
+                        } />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/chats" element={<Chats />} />
                         <Route path="/support" element={<Support />} />

@@ -1,0 +1,36 @@
+/* ONLY target specific components that need fixing */
+
+/* CreateOrderForm specific fixes */
+.create-order-form .search-input,
+.create-order-form .item-quantity input,
+.create-order-form input[type="text"],
+.create-order-form input[type="number"],
+.create-order-form select {
+  color: #000 !important;
+}
+
+/* Shop page specific fixes */
+.min-h-screen:not(.form) input[type="text"],
+.min-h-screen:not(.form) input[type="number"],
+.min-h-screen:not(.form) input[type="search"] {
+  color: #000 !important;
+}
+
+/* Dashboard page specific fixes */
+.dashboard-container input,
+.dashboard-container select,
+.orders-container input,
+.orders-container select,
+.products-container input,
+.products-container select,
+.categories-container input,
+.categories-container select {
+  color: #000 !important;
+}
+
+/* Explicitly preserve auth form white text */
+.form input,
+.form select,
+.form textarea {
+  color: #ffffff !important;
+}

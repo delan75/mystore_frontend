@@ -18,6 +18,9 @@ const AuthPage = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [phoneValid, setPhoneValid] = useState(true);
     const [error, setError] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
     const { login, register } = useAuth();
     const navigate = useNavigate();
 
@@ -387,7 +390,7 @@ Please save this username as you'll need it to log in.`;
                             </label>
                             <div className="password-input-wrapper">
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     autoComplete="off"
                                     value={password}
@@ -396,6 +399,9 @@ Please save this username as you'll need it to log in.`;
                                     onFocus={handleInputFocus}
                                     className="password-input"
                                 />
+                                <div className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                                    <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </div>
                                 {password && passwordStrength > 0 && (
                                     <div className={`password-strength ${getPasswordStrengthInfo().color}`}>
                                         <i className={getPasswordStrengthInfo().icon}></i>
@@ -410,7 +416,7 @@ Please save this username as you'll need it to log in.`;
                             </label>
                             <div className="password-input-wrapper">
                                 <input
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     required
                                     autoComplete="off"
                                     value={confirmPassword}
@@ -419,6 +425,9 @@ Please save this username as you'll need it to log in.`;
                                     onFocus={handleInputFocus}
                                     className="confirm-password-input"
                                 />
+                                <div className="password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <i className={`fa ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </div>
                                 {confirmPassword && (
                                     <div className="password-match-indicator">
                                         {passwordsMatch ? (
@@ -502,16 +511,21 @@ Please save this username as you'll need it to log in.`;
                             <label>
                                 Password<span className="req">*</span>
                             </label>
-                            <input
-                                type="password"
-                                required
-                                autoComplete="off"
-                                value={password}
-                                onChange={(e) => handleInputChange(e, setPassword)}
-                                onBlur={handleInputBlur}
-                                onFocus={handleInputFocus}
-                                className="login-password-input"
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={showLoginPassword ? "text" : "password"}
+                                    required
+                                    autoComplete="off"
+                                    value={password}
+                                    onChange={(e) => handleInputChange(e, setPassword)}
+                                    onBlur={handleInputBlur}
+                                    onFocus={handleInputFocus}
+                                    className="login-password-input"
+                                />
+                                <div className="password-toggle" onClick={() => setShowLoginPassword(!showLoginPassword)}>
+                                    <i className={`fa ${showLoginPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </div>
+                            </div>
                         </div>
                         <p className="forgot">
                             <a href="/reset-password">Forgot Password?</a>

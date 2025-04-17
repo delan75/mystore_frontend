@@ -11,11 +11,18 @@ const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showProductsSubmenu, setShowProductsSubmenu] = useState(true); // Start with submenu open
     const [showCategoriesSubmenu, setShowCategoriesSubmenu] = useState(true); // Start with submenu open
+    const [showOrdersSubmenu, setShowOrdersSubmenu] = useState(true); // Start with submenu open
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef(null);
 
     // Function to check if current user has product management access
     const hasProductManagementAccess = user?.role === 'manager' || user?.role === 'admin';
+
+    // Function to check if current user has order management access (admin, manager, or cashier)
+    const hasOrderManagementAccess = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'cashier';
+
+    // Function to check if current user can modify orders (admin or manager only)
+    const canModifyOrders = user?.role === 'admin' || user?.role === 'manager';
 
 
 
@@ -81,11 +88,58 @@ const Layout = ({ children }) => {
                                     <span>Shop</span>
                                 </Link>
                             </li>
-                            <li>
-                                <Link to="/orders" className="text-white hover:text-[#1ab188] block py-2 flex items-center">
-                                    <i className="fas fa-shopping-cart mr-2"></i>
-                                    <span>Orders</span>
-                                </Link>
+                            <li className="relative">
+                                {/* Orders main link with dropdown toggle */}
+                                <div
+                                    className="text-white hover:text-[#1ab188] py-2 flex items-center justify-between cursor-pointer"
+                                    onClick={() => setShowOrdersSubmenu(!showOrdersSubmenu)}
+                                >
+                                    <div className="flex items-center">
+                                        <i className="fas fa-shopping-cart mr-2"></i>
+                                        <span>Orders</span>
+                                    </div>
+                                    <i className={`fas fa-chevron-${showOrdersSubmenu ? 'down' : 'right'} text-xs`}></i>
+                                </div>
+
+                                {/* Sub-navigation items */}
+                                {showOrdersSubmenu && (
+                                    <ul className="ml-6 space-y-2 mt-1">
+                                        {/* Create Order - visible to all users */}
+                                        <li>
+                                            <Link
+                                                to="/orders/create"
+                                                className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                            >
+                                                <i className="fas fa-plus mr-2"></i>
+                                                <span>Create Order</span>
+                                            </Link>
+                                        </li>
+
+                                        {/* My Orders - visible to all users */}
+                                        <li>
+                                            <Link
+                                                to="/orders/my"
+                                                className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                            >
+                                                <i className="fas fa-list mr-2"></i>
+                                                <span>My Orders</span>
+                                            </Link>
+                                        </li>
+
+                                        {/* Manage Orders - only visible to admin/manager/cashier */}
+                                        {hasOrderManagementAccess && (
+                                            <li>
+                                                <Link
+                                                    to="/orders/manage"
+                                                    className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                                >
+                                                    <i className="fas fa-tasks mr-2"></i>
+                                                    <span>Manage Orders</span>
+                                                </Link>
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
                             </li>
 
                             <li>

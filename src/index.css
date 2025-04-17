@@ -184,7 +184,7 @@ input.invalid {
 /* Password strength indicator */
 .password-strength {
     position: absolute;
-    right: 10px;
+    right: 40px; /* Moved to the left to make room for the toggle button */
     top: 50%;
     transform: translateY(-50%);
     display: flex;
@@ -197,8 +197,33 @@ input.invalid {
     border-radius: 3px;
 }
 
+/* Password toggle button */
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    font-size: 16px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: #1ab188;
+}
+
 /* Password match indicator */
-.password-match-indicator,
+.password-match-indicator {
+    position: absolute;
+    right: 40px; /* Moved to the left to make room for the toggle button */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    font-size: 16px;
+}
+
 .validation-error {
     position: absolute;
     right: 10px;
