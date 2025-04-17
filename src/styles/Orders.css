@@ -169,11 +169,28 @@
   min-width: 120px;
 }
 
-.status-update-dropdown select {
+.status-update-dropdown select,
+.status-select {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   border: 1px solid #ced4da;
+  background-color: #fff;
+  color: #000;
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.status-update-dropdown select:focus,
+.status-select:focus {
+  border-color: #1ab188;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(26, 177, 136, 0.25);
+}
+
+.status-update-dropdown select option,
+.status-select option {
+  color: #000;
 }
 
 /* Action Buttons */

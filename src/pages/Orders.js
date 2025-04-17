@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 import CreateOrderForm from '../components/CreateOrderForm';
 import '../styles/Orders.css';
 
-const Orders = () => {
+const Orders = ({ mode = 'my' }) => {
     const { user, accessToken } = useAuth();
     const { formatPriceSync, selectedCurrency } = useCurrency();
     const [orders, setOrders] = useState([]);
@@ -27,20 +27,36 @@ const Orders = () => {
 
     const isAdmin = user?.role === 'admin';
     const isManager = user?.role === 'manager';
+    const isCashier = user?.role === 'cashier';
     const hasManagementAccess = isAdmin || isManager;
+    const hasOrderManagementAccess = isAdmin || isManager || isCashier;
+    const canModifyOrders = isAdmin || isManager;
 
-    // Fetch orders
-    const fetchOrders = async (page) => {
+    const navigate = useNavigate();
+
+    // Define fetchOrders function outside useEffect so it can be called from elsewhere
+    const fetchOrders = async (pageNumber) => {
         if (!accessToken) return;
 
         try {
             setLoading(true);
-            const response = await axios.get('/orders/', {
+
+            // Determine the endpoint based on the mode
+            let endpoint = '/orders/';
+            let params = {
+                page: pageNumber || pagination.currentPage,
+                page_size: itemsPerPage
+            };
+
+            // For 'my' mode, we only want the user's orders
+            if (mode === 'my') {
+                params.user = user?.id;
+            }
+            // For 'manage' mode, we want all orders (no additional params needed)
+
+            const response = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${accessToken}` },
-                params: {
-                    page: page,
-                    page_size: itemsPerPage
-                }
+                params: params
             });
 
             setOrders(response.data.results || []);
@@ -48,7 +64,7 @@ const Orders = () => {
             // Handle pagination if the API supports it
             if (response.data.count !== undefined) {
                 setPagination({
-                    currentPage: page,
+                    currentPage: pageNumber || pagination.currentPage,
                     totalPages: Math.ceil(response.data.count / itemsPerPage),
                     hasNext: !!response.data.next,
                     hasPrevious: !!response.data.previous,
@@ -58,11 +74,19 @@ const Orders = () => {
             }
         } catch (error) {
             console.error('Failed to fetch orders:', error);
-            toast.error('Failed to fetch orders. Please try again later.');
+            toast.error('Failed to load orders');
         } finally {
             setLoading(false);
         }
     };
+
+    // Fetch orders from API when component mounts or dependencies change
+    useEffect(() => {
+        if (accessToken) {
+            fetchOrders();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken, pagination.currentPage, itemsPerPage, mode, user?.id]);
 
     // Fetch order details including items
     const fetchOrderDetails = async (orderId) => {
@@ -262,13 +286,8 @@ const Orders = () => {
         fetchOrders(1); // Refresh the orders list and go to first page
     };
 
-    // Fetch orders when component mounts or pagination changes
-    useEffect(() => {
-        if (accessToken) {
-            fetchOrders(pagination.currentPage);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pagination.currentPage, accessToken, itemsPerPage]);
+    // We already have a useEffect for fetching orders above, so this one is redundant
+    // and can be removed
 
     // Get status badge class based on order status
     const getStatusBadgeClass = (status) => {
@@ -315,83 +334,174 @@ const Orders = () => {
 
     // Render action buttons based on order status and user role
     const renderActionButtons = (order) => {
+        // Base view button that's always available
+        const viewButton = (
+            <button
+                className="btn-view"
+                onClick={() => toggleOrderExpansion(order.id)}
+                title={expandedOrders[order.id] ? "Hide Details" : "View Details"}
+            >
+                <i className={`fas fa-${expandedOrders[order.id] ? 'chevron-up' : 'chevron-down'}`}></i>
+                {expandedOrders[order.id] ? 'Hide Details' : 'View Details'}
+            </button>
+        );
+
+        // For 'my' mode or if user can modify orders
+        if (mode === 'my' || canModifyOrders) {
+            return (
+                <div className="action-buttons">
+                    {viewButton}
+
+                    {order.status === 'pending' && (
+                        <>
+                            <button
+                                className="btn-checkout"
+                                onClick={() => handleCheckout(order.id)}
+                                disabled={order.processing}
+                                title="Checkout Order"
+                            >
+                                {order.processing ? (
+                                    <>
+                                        <i className="fas fa-spinner fa-spin"></i> Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-credit-card"></i> Checkout
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                className="btn-cancel"
+                                onClick={() => handleCancelOrder(order.id)}
+                                disabled={order.processing}
+                                title="Cancel Order"
+                            >
+                                <i className="fas fa-times"></i> Cancel
+                            </button>
+                        </>
+                    )}
+
+                    {(order.status === 'shipped' || order.status === 'completed') && (
+                        <button
+                            className="btn-return"
+                            onClick={() => handleRequestReturn(order.id)}
+                            title="Request Return"
+                        >
+                            <i className="fas fa-undo"></i> Return
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        // For cashiers in manage mode, only show view details and status change
+        if (mode === 'manage' && isCashier) {
+            return (
+                <div className="action-buttons">
+                    {viewButton}
+
+                    {/* Status change dropdown for cashiers */}
+                    <select
+                        className="status-select"
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        disabled={order.processing}
+                    >
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="returned">Returned</option>
+                    </select>
+                </div>
+            );
+        }
+
+        // Default case - just view button
         return (
             <div className="action-buttons">
-                <button
-                    className="btn-view"
-                    onClick={() => toggleOrderExpansion(order.id)}
-                    title={expandedOrders[order.id] ? "Hide Details" : "View Details"}
-                >
-                    <i className={`fas fa-${expandedOrders[order.id] ? 'chevron-up' : 'chevron-down'}`}></i>
-                    {expandedOrders[order.id] ? 'Hide Details' : 'View Details'}
-                </button>
-
-                {order.status === 'pending' && (
-                    <>
-                        <button
-                            className="btn-checkout"
-                            onClick={() => handleCheckout(order.id)}
-                            disabled={order.processing}
-                            title="Checkout Order"
-                        >
-                            {order.processing ? (
-                                <>
-                                    <i className="fas fa-spinner fa-spin"></i> Processing...
-                                </>
-                            ) : (
-                                <>
-                                    <i className="fas fa-credit-card"></i> Checkout
-                                </>
-                            )}
-                        </button>
-
-                        <button
-                            className="btn-cancel"
-                            onClick={() => handleCancelOrder(order.id)}
-                            disabled={order.processing}
-                            title="Cancel Order"
-                        >
-                            <i className="fas fa-times"></i> Cancel
-                        </button>
-                    </>
-                )}
-
-                {(order.status === 'shipped' || order.status === 'completed') && (
-                    <button
-                        className="btn-return"
-                        onClick={() => handleRequestReturn(order.id)}
-                        title="Request Return"
-                    >
-                        <i className="fas fa-undo"></i> Return
-                    </button>
-                )}
+                {viewButton}
             </div>
         );
+    };
+
+    // Handle status change (for cashiers)
+    const handleStatusChange = async (orderId, newStatus) => {
+        if (!accessToken) return;
+
+        try {
+            // Mark the order as processing
+            setOrders(prevOrders =>
+                prevOrders.map(order =>
+                    order.id === orderId ? { ...order, processing: true } : order
+                )
+            );
+
+            // Call the backend API to update the status
+            await axios.patch(`/orders/${orderId}/`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+
+            // Update the local state
+            setOrders(prevOrders =>
+                prevOrders.map(order =>
+                    order.id === orderId ? { ...order, status: newStatus, processing: false } : order
+                )
+            );
+
+            toast.success(`Order status updated to ${newStatus}`);
+        } catch (error) {
+            console.error('Failed to update order status:', error);
+            toast.error('Failed to update order status');
+
+            // Reset processing state
+            setOrders(prevOrders =>
+                prevOrders.map(order =>
+                    order.id === orderId ? { ...order, processing: false } : order
+                )
+            );
+        }
+    };
+
+    // Get the page title based on mode
+    const getPageTitle = () => {
+        switch (mode) {
+            case 'create':
+                return 'Create Order';
+            case 'my':
+                return 'My Orders';
+            case 'manage':
+                return 'Manage Orders';
+            default:
+                return 'Orders';
+        }
     };
 
     return (
         <div className="orders-container p-4">
             <div className="orders-header mb-4">
-                <h1 className="orders-title">Orders</h1>
+                <h1 className="orders-title">{getPageTitle()}</h1>
                 <div className="orders-actions">
-                    <button
-                        className="btn-create-order"
-                        onClick={() => setShowCreateForm(!showCreateForm)}
-                    >
-                        {showCreateForm ? (
-                            <><i className="fas fa-times"></i> Cancel</>
-                        ) : (
-                            <><i className="fas fa-plus"></i> Create Order</>
-                        )}
-                    </button>
+                    {mode === 'create' ? null : (
+                        <Link to="/orders/create" className="btn-create-order">
+                            <i className="fas fa-plus"></i> Create Order
+                        </Link>
+                    )}
                 </div>
             </div>
 
-            {/* Create Order Form */}
-            {showCreateForm && (
+            {/* Create Order Form - only show in create mode */}
+            {mode === 'create' && (
                 <CreateOrderForm
-                    onOrderCreated={handleOrderCreated}
-                    onCancel={() => setShowCreateForm(false)}
+                    onOrderCreated={(newOrder) => {
+                        handleOrderCreated(newOrder);
+                        // Redirect to My Orders after creation
+                        navigate('/orders/my');
+                    }}
+                    onCancel={() => navigate('/orders/my')}
                 />
             )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './styles/InputFix.css'; // Import the input fix CSS
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 // Import FontAwesome for icons
