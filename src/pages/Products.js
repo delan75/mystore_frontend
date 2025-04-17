@@ -184,7 +184,7 @@ const Products = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="table-responsive">
+                            <div className="tablessss-responsives">
                                 <table className="table table-hover align-middle">
                                     <thead>
                                         <tr>
