@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import CurrencySelector from './CurrencySelector';
+import MessageNotification from './MessageNotification';
 import placeholderAvatar from '../assets/placeholder-avatar.svg';
 
 const Layout = ({ children }) => {
@@ -12,6 +13,7 @@ const Layout = ({ children }) => {
     const [showProductsSubmenu, setShowProductsSubmenu] = useState(true);
     const [showCategoriesSubmenu, setShowCategoriesSubmenu] = useState(true);
     const [showOrdersSubmenu, setShowOrdersSubmenu] = useState(false);
+    const [showChatsSubmenu, setShowChatsSubmenu] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef(null);
 
@@ -172,11 +174,69 @@ const Layout = ({ children }) => {
                                 )}
                             </li>
 
-                            <li>
-                                <Link to="/chats" className="text-white hover:text-[#1ab188] block py-2 flex items-center">
-                                    <i className="fas fa-comments mr-2"></i>
-                                    <span>Chats</span>
-                                </Link>
+                            <li className="relative">
+                                {/* Chats main link with dropdown toggle */}
+                                <div
+                                    className="text-white hover:text-[#1ab188] py-2 flex items-center justify-between cursor-pointer"
+                                    onClick={() => setShowChatsSubmenu(!showChatsSubmenu)}
+                                >
+                                    <div className="flex items-center">
+                                        <i className="fas fa-comments mr-2"></i>
+                                        <span>Chats</span>
+                                    </div>
+                                    <i className={`fas fa-chevron-${showChatsSubmenu ? 'down' : 'right'} text-xs`}></i>
+                                </div>
+
+                                {/* Sub-navigation items */}
+                                {showChatsSubmenu && (
+                                    <ul className="ml-6 space-y-2 mt-1">
+                                        {/* My Chats - visible to all users */}
+                                        <li>
+                                            <Link
+                                                to="/chats"
+                                                className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                            >
+                                                <i className="fas fa-inbox mr-2"></i>
+                                                <span>My Chats</span>
+                                            </Link>
+                                        </li>
+
+                                        {/* New Chat - visible to all users */}
+                                        <li>
+                                            <Link
+                                                to="/chats/new"
+                                                className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                            >
+                                                <i className="fas fa-plus mr-2"></i>
+                                                <span>New Chat</span>
+                                            </Link>
+                                        </li>
+
+                                        {/* Blocked Users - visible to all users */}
+                                        <li>
+                                            <Link
+                                                to="/chats/blocked"
+                                                className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                            >
+                                                <i className="fas fa-ban mr-2"></i>
+                                                <span>Blocked Users</span>
+                                            </Link>
+                                        </li>
+
+                                        {/* Manage Chats - only visible to admin/manager */}
+                                        {hasProductManagementAccess && (
+                                            <li>
+                                                <Link
+                                                    to="/chats/manage"
+                                                    className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                                >
+                                                    <i className="fas fa-cog mr-2"></i>
+                                                    <span>Manage Chats</span>
+                                                </Link>
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
                             </li>
                             {/* Products menu item with conditional rendering */}
                             <li className="relative">
@@ -301,10 +361,8 @@ const Layout = ({ children }) => {
                                 <CurrencySelector />
                             </div>
 
-                            {/* Email Icon */}
-                            <div className="text-gray-600 cursor-pointer">
-                                <i className="fas fa-envelope text-xl"></i>
-                            </div>
+                            {/* Message Notification Icon */}
+                            <MessageNotification />
 
                             {/* User Profile Dropdown */}
                             {user && (

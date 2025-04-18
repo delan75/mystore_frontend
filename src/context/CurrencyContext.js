@@ -48,6 +48,17 @@ export const CurrencyProvider = ({ children }) => {
     const fetchCurrencies = async () => {
       try {
         setLoading(true);
+
+        // Use fallback currency if API fails
+        const fallbackCurrency = {
+          code: 'ZAR',
+          name: 'South African Rand',
+          symbol: 'R',
+          exchange_rate: 1,
+          is_default: true,
+          is_active: true
+        };
+
         // Fetch all active currencies
         const currenciesResponse = await axios.get('/store/currencies/');
         setCurrencies(currenciesResponse.data);

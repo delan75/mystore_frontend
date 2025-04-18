@@ -201,13 +201,43 @@ const AuthPage = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setError(null);
+
+        if (!username || !password) {
+            setError('Please enter both username and password.');
+            toast.error('Please enter both username and password.');
+            return;
+        }
+
         try {
+            console.log('Attempting to login with username:', username);
             await login(username, password);
+            console.log('Login successful, navigating to dashboard');
             toast.success('Logged in successfully!');
             navigate('/dashboard');
         } catch (err) {
-            setError('Login failed. Please check your credentials.');
-            toast.error('Login failed. Please check your credentials.');
+            console.error('Login error details:', err);
+
+            // Handle specific error responses
+            if (err.response?.data) {
+                const errorData = err.response.data;
+
+                if (errorData.detail) {
+                    setError(errorData.detail);
+                    toast.error(errorData.detail);
+                    return;
+                }
+
+                if (errorData.error) {
+                    setError(errorData.error);
+                    toast.error(errorData.error);
+                    return;
+                }
+            }
+
+            // Default error message
+            setError('Login failed. Please check your credentials or try again later.');
+            toast.error('Login failed. Please check your credentials or try again later.');
         }
     };
 

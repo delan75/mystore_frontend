@@ -101,7 +101,17 @@ function App() {
                             </OrderManagementRoute>
                         } />
                         <Route path="/profile" element={<Profile />} />
+
+                        {/* Chat routes */}
                         <Route path="/chats" element={<Chats />} />
+                        <Route path="/chats/new" element={<Chats mode="new" />} />
+                        <Route path="/chats/blocked" element={<Chats mode="blocked" />} />
+                        <Route path="/chats/manage" element={
+                            <ManagerRoute>
+                                <Chats mode="manage" />
+                            </ManagerRoute>
+                        } />
+
                         <Route path="/support" element={<Support />} />
                         <Route path="/account-settings" element={<AccountSettings />} />
                         <Route path="/privacy" element={<PrivacyCenter />} />
