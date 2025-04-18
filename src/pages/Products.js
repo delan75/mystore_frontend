@@ -35,15 +35,28 @@ const Products = () => {
             // Create a map of category IDs to category names
             const categoryMap = {};
             const processCategories = (cats) => {
-                cats.forEach(category => {
-                    categoryMap[category.id] = category.name;
-                    if (category.subcategories && category.subcategories.length > 0) {
-                        processCategories(category.subcategories);
-                    }
-                });
+                // Check if cats is an array before using forEach
+                if (Array.isArray(cats)) {
+                    cats.forEach(category => {
+                        categoryMap[category.id] = category.name;
+                        if (category.subcategories && category.subcategories.length > 0) {
+                            processCategories(category.subcategories);
+                        }
+                    });
+                } else {
+                    console.log('Categories data is not an array:', cats);
+                }
             };
 
-            processCategories(response.data);
+            // Check if response.data is an array or if it has a results property
+            if (Array.isArray(response.data)) {
+                processCategories(response.data);
+            } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+                processCategories(response.data.results);
+            } else {
+                console.log('Unexpected category tree format:', response.data);
+            }
+
             setCategories(categoryMap);
         } catch (error) {
             console.error('Failed to fetch categories from tree endpoint:', error);
@@ -184,7 +197,7 @@ const Products = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="table-responsive">
+                            <div className="tablessss-responsives">
                                 <table className="table table-hover align-middle">
                                     <thead>
                                         <tr>

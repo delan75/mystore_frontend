@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 import CreateOrderForm from '../components/CreateOrderForm';
-import '../styles/Orders.css';
+import '../styles/OrdersBootstrap.css';
 
 const Orders = ({ mode = 'my' }) => {
     const { user, accessToken } = useAuth();
@@ -15,6 +15,18 @@ const Orders = ({ mode = 'my' }) => {
     const [orderItems, setOrderItems] = useState({});
     const [userNames, setUserNames] = useState({});
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [searchFilters, setSearchFilters] = useState({
+        status: '',
+        date_from: '',
+        date_to: '',
+        min_amount: '',
+        max_amount: '',
+        sort_by: 'created_at',
+        sort_order: 'desc'
+    });
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
     const [selectedOrders, setSelectedOrders] = useState([]);
     const [bulkAction, setBulkAction] = useState('');
     const [bulkActionStatus, setBulkActionStatus] = useState('pending');
@@ -45,21 +57,43 @@ const Orders = ({ mode = 'my' }) => {
         try {
             setLoading(true);
 
-            // Determine the endpoint based on the mode
-            let endpoint = '/orders/';
+            // Use the search endpoint for all order queries
+            let endpoint = '/orders/search/';
             let params = {
                 page: pageNumber || pagination.currentPage,
-                page_size: itemsPerPage
+                page_size: itemsPerPage,
+                sort_by: searchFilters.sort_by,
+                sort_order: searchFilters.sort_order
             };
 
-            // For 'my' mode, we only want the user's orders
-            if (mode === 'my') {
-                params.user = user?.id;
+            // Add search query if search term exists
+            if (debouncedSearchTerm) {
+                params.q = debouncedSearchTerm;
             }
-            // For 'manage' mode, we want all orders using the all orders endpoint
-            else if (mode === 'manage' && hasOrderManagementAccess) {
-                endpoint = '/orders/all/';
+
+            // Add filters if they exist
+            if (searchFilters.status) {
+                params.status = searchFilters.status;
             }
+
+            if (searchFilters.date_from) {
+                params.date_from = searchFilters.date_from;
+            }
+
+            if (searchFilters.date_to) {
+                params.date_to = searchFilters.date_to;
+            }
+
+            if (searchFilters.min_amount) {
+                params.min_amount = searchFilters.min_amount;
+            }
+
+            if (searchFilters.max_amount) {
+                params.max_amount = searchFilters.max_amount;
+            }
+
+            // For 'my' mode, the backend will automatically filter to the user's orders
+            // For 'manage' mode, staff can see all orders by default
 
             const response = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${accessToken}` },
@@ -130,7 +164,22 @@ const Orders = ({ mode = 'my' }) => {
             fetchOrders();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [accessToken, pagination.currentPage, itemsPerPage, mode, user?.id]);
+    }, [accessToken, pagination.currentPage, itemsPerPage, mode, user?.id, debouncedSearchTerm, searchFilters]);
+
+    // Debounce search term to avoid too many API calls
+    useEffect(() => {
+        const timerId = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            // Reset to first page when searching
+            if (pagination.currentPage !== 1) {
+                setPagination(prev => ({ ...prev, currentPage: 1 }));
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(timerId);
+        };
+    }, [searchTerm, pagination.currentPage]);
 
     // Fetch order details including items
     const fetchOrderDetails = async (orderId) => {
@@ -479,6 +528,19 @@ const Orders = ({ mode = 'my' }) => {
         }
     };
 
+    // Check if any filters are active
+    const hasActiveFilters = () => {
+        return (
+            searchFilters.status !== '' ||
+            searchFilters.date_from !== '' ||
+            searchFilters.date_to !== '' ||
+            searchFilters.min_amount !== '' ||
+            searchFilters.max_amount !== '' ||
+            searchFilters.sort_by !== 'created_at' ||
+            searchFilters.sort_order !== 'desc'
+        );
+    };
+
     // Generate page numbers for pagination
     const getPageNumbers = () => {
         const totalPages = pagination.totalPages;
@@ -524,23 +586,37 @@ const Orders = ({ mode = 'my' }) => {
     // We already have a useEffect for fetching orders above, so this one is redundant
     // and can be removed
 
-    // Get status badge class based on order status
-    const getStatusBadgeClass = (status) => {
+    // Get Bootstrap status badge class based on order status
+    const getBootstrapStatusBadgeClass = (status) => {
         switch (status) {
             case 'pending':
-                return 'status-pending';
+                return 'bg-warning text-dark';
             case 'paid':
-                return 'status-paid';
+                return 'bg-primary';
             case 'processing':
-                return 'status-processing';
+                return 'bg-info';
             case 'shipped':
-                return 'status-shipped';
+                return 'bg-info text-dark';
             case 'completed':
-                return 'status-completed';
+                return 'bg-success';
             case 'cancelled':
-                return 'status-cancelled';
+                return 'bg-danger';
             default:
-                return 'status-default';
+                return 'bg-secondary';
+        }
+    };
+
+    // Get status button class for dropdowns
+    const getStatusButtonClass = (status) => {
+        switch (status) {
+            case 'pending': return 'btn-outline-warning';
+            case 'paid': return 'btn-outline-primary';
+            case 'processing': return 'btn-outline-info';
+            case 'shipped': return 'btn-outline-info';
+            case 'completed': return 'btn-outline-success';
+            case 'cancelled': return 'btn-outline-danger';
+            case 'returned': return 'btn-outline-secondary';
+            default: return 'btn-outline-secondary';
         }
     };
 
@@ -551,18 +627,28 @@ const Orders = ({ mode = 'my' }) => {
         const availableStatuses = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
 
         return (
-            <div className="status-update-dropdown">
-                <select
-                    value={order.status}
-                    onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                    className="form-select form-select-sm"
+            <div className="dropdown d-inline-block ms-1">
+                <button
+                    className={`btn btn-sm ${getStatusButtonClass(order.status)} dropdown-toggle`}
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    disabled={order.processing}
                 >
+                    <span className="btn-text">Change</span>
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end">
                     {availableStatuses.map(status => (
-                        <option key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </option>
+                        <li key={status}>
+                            <button
+                                className={`dropdown-item ${status === order.status ? 'active' : ''}`}
+                                onClick={() => handleUpdateStatus(order.id, status)}
+                            >
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                        </li>
                     ))}
-                </select>
+                </ul>
             </div>
         );
     };
@@ -572,47 +658,47 @@ const Orders = ({ mode = 'my' }) => {
         // Base view button that's always available
         const viewButton = (
             <button
-                className="btn-view"
+                className="btn btn-sm btn-outline-info me-1"
                 onClick={() => toggleOrderExpansion(order.id)}
                 title={expandedOrders[order.id] ? "Hide Details" : "View Details"}
             >
-                <i className={`fas fa-${expandedOrders[order.id] ? 'chevron-up' : 'chevron-down'}`}></i>
-                {expandedOrders[order.id] ? 'Hide Details' : 'View Details'}
+                <i className={`fas fa-${expandedOrders[order.id] ? 'chevron-up' : 'chevron-down'} me-1`}></i>
+                <span className="btn-text">{expandedOrders[order.id] ? 'Hide' : 'View'}</span>
             </button>
         );
 
         // For 'my' mode or if user can modify orders
         if (mode === 'my' || canModifyOrders) {
             return (
-                <div className="action-buttons">
+                <div className="d-flex flex-wrap gap-1">
                     {viewButton}
 
                     {order.status === 'pending' && (
                         <>
                             <button
-                                className="btn-checkout"
+                                className="btn btn-sm btn-success me-1"
                                 onClick={() => handleCheckout(order.id)}
                                 disabled={order.processing}
                                 title="Checkout Order"
                             >
                                 {order.processing ? (
                                     <>
-                                        <i className="fas fa-spinner fa-spin"></i> Processing...
+                                        <i className="fas fa-spinner fa-spin me-1"></i> Processing...
                                     </>
                                 ) : (
                                     <>
-                                        <i className="fas fa-credit-card"></i> Checkout
+                                        <i className="fas fa-credit-card me-1"></i> <span className="btn-text">Checkout</span>
                                     </>
                                 )}
                             </button>
 
                             <button
-                                className="btn-cancel"
+                                className="btn btn-sm btn-warning me-1"
                                 onClick={() => handleCancelOrder(order.id)}
                                 disabled={order.processing}
                                 title="Cancel Order"
                             >
-                                <i className="fas fa-times"></i> Cancel
+                                <i className="fas fa-times me-1"></i> <span className="btn-text">Cancel</span>
                             </button>
                         </>
                     )}
@@ -620,18 +706,18 @@ const Orders = ({ mode = 'my' }) => {
                     {/* Mark as Delivered button for customers (only for shipped orders) */}
                     {mode === 'my' && order.status === 'shipped' && (
                         <button
-                            className="btn-delivered"
+                            className="btn btn-sm btn-success me-1"
                             onClick={() => handleMarkDelivered(order.id)}
                             disabled={order.processing}
                             title="Mark as Delivered"
                         >
                             {order.processing ? (
                                 <>
-                                    <i className="fas fa-spinner fa-spin"></i> Processing...
+                                    <i className="fas fa-spinner fa-spin me-1"></i> Processing...
                                 </>
                             ) : (
                                 <>
-                                    <i className="fas fa-check-circle"></i> Mark Delivered
+                                    <i className="fas fa-check-circle me-1"></i> <span className="btn-text">Delivered</span>
                                 </>
                             )}
                         </button>
@@ -640,30 +726,26 @@ const Orders = ({ mode = 'my' }) => {
                     {/* Delete Order button for admins and managers */}
                     {canModifyOrders && (
                         <button
-                            className="btn-delete"
+                            className="btn btn-sm btn-danger"
                             onClick={() => handleDeleteOrder(order.id)}
                             disabled={order.processing}
                             title="Delete Order"
                         >
                             {order.processing ? (
-                                <>
-                                    <i className="fas fa-spinner fa-spin"></i>
-                                </>
+                                <i className="fas fa-spinner fa-spin"></i>
                             ) : (
-                                <>
-                                    <i className="fas fa-trash"></i>
-                                </>
+                                <i className="fas fa-trash"></i>
                             )}
                         </button>
                     )}
 
                     {(order.status === 'shipped' || order.status === 'completed') && (
                         <button
-                            className="btn-return"
+                            className="btn btn-sm btn-secondary me-1"
                             onClick={() => handleRequestReturn(order.id)}
                             title="Request Return"
                         >
-                            <i className="fas fa-undo"></i> Return
+                            <i className="fas fa-undo me-1"></i> <span className="btn-text">Return</span>
                         </button>
                     )}
                 </div>
@@ -673,30 +755,36 @@ const Orders = ({ mode = 'my' }) => {
         // For cashiers in manage mode, only show view details and status change
         if (mode === 'manage' && isCashier) {
             return (
-                <div className="action-buttons">
+                <div className="d-flex flex-wrap gap-1 align-items-center">
                     {viewButton}
 
                     {/* Status change dropdown for cashiers */}
-                    <select
-                        className="status-select"
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        disabled={order.processing}
-                    >
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="returned">Returned</option>
-                    </select>
+                    <div className="dropdown d-inline-block ms-1">
+                        <button
+                            className={`btn btn-sm ${getStatusButtonClass(order.status)} dropdown-toggle`}
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            disabled={order.processing}
+                        >
+                            <span className="btn-text">Change Status</span>
+                        </button>
+                        <ul className="dropdown-menu dropdown-menu-end">
+                            <li><button className={`dropdown-item ${order.status === 'pending' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'pending')}>Pending</button></li>
+                            <li><button className={`dropdown-item ${order.status === 'processing' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'processing')}>Processing</button></li>
+                            <li><button className={`dropdown-item ${order.status === 'shipped' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'shipped')}>Shipped</button></li>
+                            <li><button className={`dropdown-item ${order.status === 'completed' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'completed')}>Completed</button></li>
+                            <li><button className={`dropdown-item ${order.status === 'cancelled' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'cancelled')}>Cancelled</button></li>
+                            <li><button className={`dropdown-item ${order.status === 'returned' ? 'active' : ''}`} onClick={() => handleStatusChange(order.id, 'returned')}>Returned</button></li>
+                        </ul>
+                    </div>
                 </div>
             );
         }
 
         // Default case - just view button
         return (
-            <div className="action-buttons">
+            <div className="d-flex">
                 {viewButton}
             </div>
         );
@@ -757,13 +845,38 @@ const Orders = ({ mode = 'my' }) => {
 
     return (
         <div className="orders-container p-4">
-            <div className="orders-header mb-4">
-                <h1 className="orders-title">{getPageTitle()}</h1>
-                <div className="orders-actions">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h1 className="h3 mb-0">{getPageTitle()}</h1>
+                <div className="d-flex flex-column flex-md-row gap-2 align-items-md-center">
                     {mode === 'create' ? null : (
-                        <Link to="/orders/create" className="btn-create-order">
-                            <i className="fas fa-plus"></i> Create Order
-                        </Link>
+                        <>
+                            <div className="d-flex flex-column gap-2" style={{width: '300px'}}>
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        placeholder="Search orders..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="form-control"
+                                        aria-label="Search orders"
+                                    />
+                                    <span className="input-group-text bg-white">
+                                        <i className="fas fa-search text-muted"></i>
+                                    </span>
+                                </div>
+
+                                <button
+                                    className={`btn ${filtersExpanded ? 'btn-outline-secondary active' : 'btn-outline-primary'}`}
+                                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                                >
+                                    <i className={`fas ${filtersExpanded ? 'fa-chevron-up' : 'fa-filter'} me-1`}></i>
+                                    {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+                                </button>
+                            </div>
+                            <Link to="/orders/create" className="btn btn-primary">
+                                <i className="fas fa-plus me-1"></i> Create Order
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>
@@ -781,95 +894,239 @@ const Orders = ({ mode = 'my' }) => {
             )}
 
             {loading ? (
-                <div className="loading-container">
-                    <div className="loading-spinner">
-                        <i className="fas fa-spinner fa-spin"></i>
+                <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                    <div className="mb-3 text-primary">
+                        <i className="fas fa-spinner fa-spin fa-2x"></i>
                     </div>
-                    <p>Loading orders...</p>
+                    <p className="text-muted">Loading orders...</p>
                 </div>
             ) : (
-                <div className="orders-card">
-                    <div className="orders-card-body">
+                <>
+                    {filtersExpanded && (
+                        <div className="card mb-4 border-light filter-panel" style={{position: 'relative', zIndex: 1}}>
+                            <div className="card-body bg-light" style={{position: 'static'}}>
+                                <div className="row mb-3">
+                                    <div className="col-md-6 mb-3 mb-md-0">
+                                        <label className="form-label">Status:</label>
+                                        <select
+                                            value={searchFilters.status}
+                                            onChange={(e) => setSearchFilters({...searchFilters, status: e.target.value})}
+                                            className="form-select"
+                                        >
+                                            <option value="">All Statuses</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="paid">Paid</option>
+                                            <option value="processing">Processing</option>
+                                            <option value="shipped">Shipped</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <label className="form-label">Sort By:</label>
+                                        <select
+                                            value={`${searchFilters.sort_by}-${searchFilters.sort_order}`}
+                                            onChange={(e) => {
+                                                const [sort_by, sort_order] = e.target.value.split('-');
+                                                setSearchFilters({...searchFilters, sort_by, sort_order});
+                                            }}
+                                            className="form-select"
+                                        >
+                                            <option value="created_at-desc">Date (Newest)</option>
+                                            <option value="created_at-asc">Date (Oldest)</option>
+                                            <option value="total_amount-desc">Amount (High to Low)</option>
+                                            <option value="total_amount-asc">Amount (Low to High)</option>
+                                            <option value="order_number-asc">Order Number</option>
+                                            <option value="status-asc">Status</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="row mb-3">
+                                    <div className="col-md-6 mb-3 mb-md-0">
+                                        <label className="form-label">Date From:</label>
+                                        <input
+                                            type="date"
+                                            value={searchFilters.date_from}
+                                            onChange={(e) => setSearchFilters({...searchFilters, date_from: e.target.value})}
+                                            className="form-control orders-filter-input"
+                                            style={{zIndex: 5, position: 'relative'}}
+                                        />
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <label className="form-label">Date To:</label>
+                                        <input
+                                            type="date"
+                                            value={searchFilters.date_to}
+                                            onChange={(e) => setSearchFilters({...searchFilters, date_to: e.target.value})}
+                                            className="form-control orders-filter-input"
+                                            style={{zIndex: 5, position: 'relative'}}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="row mb-3">
+                                    <div className="col-md-6 mb-3 mb-md-0">
+                                        <label className="form-label">Min Amount:</label>
+                                        <input
+                                            type="number"
+                                            value={searchFilters.min_amount}
+                                            onChange={(e) => setSearchFilters({...searchFilters, min_amount: e.target.value})}
+                                            className="form-control orders-filter-input"
+                                            placeholder="Min"
+                                            min="0"
+                                            style={{zIndex: 5, position: 'relative'}}
+                                        />
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <label className="form-label">Max Amount:</label>
+                                        <input
+                                            type="number"
+                                            value={searchFilters.max_amount}
+                                            onChange={(e) => setSearchFilters({...searchFilters, max_amount: e.target.value})}
+                                            className="form-control orders-filter-input"
+                                            placeholder="Max"
+                                            min="0"
+                                            style={{zIndex: 5, position: 'relative'}}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="d-flex justify-content-end">
+                                    <button
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setSearchFilters({
+                                                status: '',
+                                                date_from: '',
+                                                date_to: '',
+                                                min_amount: '',
+                                                max_amount: '',
+                                                sort_by: 'created_at',
+                                                sort_order: 'desc'
+                                            });
+                                        }}
+                                    >
+                                        <i className="fas fa-times-circle me-1"></i> Clear Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className="card shadow-sm">
+                    <div className="card-body p-0">
                         {orders.length === 0 ? (
-                            <div className="no-orders-message">
+                            <div className="text-center py-5 px-3">
                                 <i className="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
-                                <p>No orders found.</p>
+                                <p className="h5 mb-3">
+                                    {debouncedSearchTerm || hasActiveFilters() ?
+                                        'No orders found matching your search criteria.' :
+                                        'No orders found.'}
+                                </p>
+                                {(debouncedSearchTerm || hasActiveFilters()) && (
+                                    <button
+                                        className="btn btn-outline-secondary mt-3"
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setSearchFilters({
+                                                status: '',
+                                                date_from: '',
+                                                date_to: '',
+                                                min_amount: '',
+                                                max_amount: '',
+                                                sort_by: 'created_at',
+                                                sort_order: 'desc'
+                                            });
+                                        }}
+                                    >
+                                        <i className="fas fa-times-circle me-1"></i> Clear All Filters
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <>
                                 {/* Bulk Actions UI - Only show for admins in manage mode */}
                                 {mode === 'manage' && isAdmin && (
-                                    <div className="bulk-actions-container mb-3">
-                                        <div className="bulk-actions-controls">
-                                            <select
-                                                className="bulk-action-select"
-                                                value={bulkAction}
-                                                onChange={(e) => setBulkAction(e.target.value)}
-                                                disabled={processingBulkAction || selectedOrders.length === 0}
-                                            >
-                                                <option value="">Select Action</option>
-                                                <option value="cancel">Cancel Orders</option>
-                                                <option value="update_status">Update Status</option>
-                                                <option value="delete">Delete Orders</option>
-                                                <option value="checkout">Checkout Orders</option>
-                                            </select>
-
-                                            {bulkAction === 'update_status' && (
+                                    <div className="card mb-3 border-light">
+                                        <div className="card-body bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                            <div className="d-flex flex-wrap gap-2 align-items-center">
                                                 <select
-                                                    className="bulk-status-select"
-                                                    value={bulkActionStatus}
-                                                    onChange={(e) => setBulkActionStatus(e.target.value)}
-                                                    disabled={processingBulkAction}
+                                                    className="form-select"
+                                                    style={{width: '180px'}}
+                                                    value={bulkAction}
+                                                    onChange={(e) => setBulkAction(e.target.value)}
+                                                    disabled={processingBulkAction || selectedOrders.length === 0}
                                                 >
-                                                    <option value="pending">Pending</option>
-                                                    <option value="paid">Paid</option>
-                                                    <option value="processing">Processing</option>
-                                                    <option value="shipped">Shipped</option>
-                                                    <option value="completed">Completed</option>
-                                                    <option value="cancelled">Cancelled</option>
+                                                    <option value="">Select Action</option>
+                                                    <option value="cancel">Cancel Orders</option>
+                                                    <option value="update_status">Update Status</option>
+                                                    <option value="delete">Delete Orders</option>
+                                                    <option value="checkout">Checkout Orders</option>
                                                 </select>
-                                            )}
 
-                                            <button
-                                                className="btn-apply-bulk-action"
-                                                onClick={handleBulkOperation}
-                                                disabled={processingBulkAction || !bulkAction || selectedOrders.length === 0}
-                                            >
-                                                {processingBulkAction ? (
-                                                    <><i className="fas fa-spinner fa-spin"></i> Processing...</>
-                                                ) : (
-                                                    <>Apply</>
+                                                {bulkAction === 'update_status' && (
+                                                    <select
+                                                        className="form-select"
+                                                        style={{width: '150px'}}
+                                                        value={bulkActionStatus}
+                                                        onChange={(e) => setBulkActionStatus(e.target.value)}
+                                                        disabled={processingBulkAction}
+                                                    >
+                                                        <option value="pending">Pending</option>
+                                                        <option value="paid">Paid</option>
+                                                        <option value="processing">Processing</option>
+                                                        <option value="shipped">Shipped</option>
+                                                        <option value="completed">Completed</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                    </select>
                                                 )}
-                                            </button>
-                                        </div>
 
-                                        <div className="selected-count">
-                                            {selectedOrders.length} {selectedOrders.length === 1 ? 'order' : 'orders'} selected
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={handleBulkOperation}
+                                                    disabled={processingBulkAction || !bulkAction || selectedOrders.length === 0}
+                                                >
+                                                    {processingBulkAction ? (
+                                                        <><i className="fas fa-spinner fa-spin me-1"></i> Processing...</>
+                                                    ) : (
+                                                        <>Apply</>
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            <div className="badge bg-primary rounded-pill fs-6">
+                                                {selectedOrders.length} {selectedOrders.length === 1 ? 'order' : 'orders'} selected
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="table-responsive">
-                                    <table className="table">
-                                        <thead>
+                                    <table className="table table-striped table-hover">
+                                        <thead className="table-dark">
                                             <tr>
                                                 {/* Checkbox column - Only show for admins in manage mode */}
                                                 {mode === 'manage' && isAdmin && (
-                                                    <th className="checkbox-column">
+                                                    <th className="text-center" style={{width: '40px'}}>
                                                         <input
                                                             type="checkbox"
+                                                            className="form-check-input"
                                                             onChange={handleSelectAllOrders}
                                                             checked={selectedOrders.length > 0 && selectedOrders.length === orders.length}
                                                             disabled={processingBulkAction}
                                                         />
                                                     </th>
                                                 )}
-                                                <th>Order Number</th>
-                                                <th>Date</th>
-                                                <th>Total Amount</th>
-                                                <th>Status</th>
-                                                {mode === 'manage' && <th>Customer</th>}
-                                                <th>Actions</th>
+                                                <th style={{width: '120px'}}>Order #</th>
+                                                <th style={{width: '100px'}}>Date</th>
+                                                <th style={{width: '120px'}}>Amount</th>
+                                                <th style={{width: '150px'}}>Status</th>
+                                                {mode === 'manage' && <th style={{width: '100px'}}>Customer</th>}
+                                                <th style={{width: '200px'}}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -878,75 +1135,79 @@ const Orders = ({ mode = 'my' }) => {
                                                     <tr>
                                                         {/* Checkbox column - Only show for admins in manage mode */}
                                                         {mode === 'manage' && isAdmin && (
-                                                            <td className="checkbox-column">
+                                                            <td className="text-center align-middle">
                                                                 <input
                                                                     type="checkbox"
+                                                                    className="form-check-input"
                                                                     checked={selectedOrders.includes(order.id)}
                                                                     onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
                                                                     disabled={processingBulkAction}
                                                                 />
                                                             </td>
                                                         )}
-                                                        <td>{order.order_number}</td>
-                                                        <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                                                        <td>{selectedCurrency ? formatPriceSync(order.total_amount) : 'Loading...'}</td>
-                                                        <td>
-                                                            <div className="status-container">
-                                                                <span className={`status-badge ${getStatusBadgeClass(order.status)}`}>
+                                                        <td className="align-middle fw-bold">{order.order_number}</td>
+                                                        <td className="align-middle">{new Date(order.created_at).toLocaleDateString()}</td>
+                                                        <td className="align-middle fw-bold">{selectedCurrency ? formatPriceSync(order.total_amount) : 'Loading...'}</td>
+                                                        <td className="align-middle">
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <span className={`badge ${getBootstrapStatusBadgeClass(order.status)}`}>
                                                                     {order.status}
                                                                 </span>
                                                                 {hasManagementAccess && renderStatusOptions(order)}
                                                             </div>
                                                         </td>
                                                         {mode === 'manage' && (
-                                                            <td className="customer-name">
-                                                                {userNames[order.user] || 'Loading...'}
+                                                            <td className="text-center align-middle" style={{maxWidth: '80px'}}>
+                                                                <span className="d-inline-block text-truncate" style={{maxWidth: '80px'}} title={userNames[order.user] || 'Loading...'}>
+                                                                    {userNames[order.user] || 'Loading...'}
+                                                                </span>
                                                             </td>
                                                         )}
-                                                        <td>
+                                                        <td className="align-middle">
                                                             {renderActionButtons(order)}
                                                         </td>
                                                     </tr>
 
                                                     {/* Order Items (Expanded View) */}
                                                     {expandedOrders[order.id] && (
-                                                        <tr className="order-details-row">
+                                                        <tr className="table-light">
                                                             <td colSpan={mode === 'manage' ? (isAdmin ? "7" : "6") : "5"}>
-                                                                <div className="order-details">
-                                                                    <h6 className="order-details-title">Order Items</h6>
+                                                                <div className="p-3 bg-light border-top">
+                                                                    <h6 className="fw-bold mb-3">Order Items</h6>
 
                                                                     {!orderItems[order.id] ? (
-                                                                        <div className="loading-items">
-                                                                            <i className="fas fa-spinner fa-spin"></i> Loading items...
+                                                                        <div className="text-center py-3">
+                                                                            <i className="fas fa-spinner fa-spin me-2"></i> Loading items...
                                                                         </div>
                                                                     ) : orderItems[order.id].length === 0 ? (
-                                                                        <p className="no-items-message">No items found for this order.</p>
+                                                                        <p className="text-center text-muted py-3">No items found for this order.</p>
                                                                     ) : (
-                                                                        <table className="items-table">
-                                                                            <thead>
+                                                                        <div className="table-responsive">
+                                                                        <table className="table table-sm table-bordered table-striped">
+                                                                            <thead className="table-secondary">
                                                                                 <tr>
                                                                                     <th>Product</th>
-                                                                                    <th>Quantity</th>
-                                                                                    <th>Price</th>
-                                                                                    <th>Total</th>
-                                                                                    {hasManagementAccess && <th>Backordered</th>}
+                                                                                    <th style={{width: '80px'}} className="text-center">Quantity</th>
+                                                                                    <th style={{width: '100px'}} className="text-end">Price</th>
+                                                                                    <th style={{width: '100px'}} className="text-end">Total</th>
+                                                                                    {hasManagementAccess && <th style={{width: '100px'}} className="text-center">Backordered</th>}
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
                                                                                 {orderItems[order.id].map((item, index) => (
                                                                                     <tr key={index}>
-                                                                                        <td>{item.product_name || `Product #${item.product}`}</td>
-                                                                                        <td>{item.quantity}</td>
-                                                                                        <td>{selectedCurrency ? formatPriceSync(item.price) : 'Loading...'}</td>
-                                                                                        <td>{selectedCurrency ? formatPriceSync(item.price * item.quantity) : 'Loading...'}</td>
+                                                                                        <td className="align-middle">{item.product_name || `Product #${item.product}`}</td>
+                                                                                        <td className="align-middle text-center">{item.quantity}</td>
+                                                                                        <td className="align-middle text-end">{selectedCurrency ? formatPriceSync(item.price) : 'Loading...'}</td>
+                                                                                        <td className="align-middle text-end fw-bold">{selectedCurrency ? formatPriceSync(item.price * item.quantity) : 'Loading...'}</td>
                                                                                         {hasManagementAccess && (
-                                                                                            <td>
+                                                                                            <td className="text-center">
                                                                                                 {item.backordered_quantity > 0 ? (
-                                                                                                    <span className="backordered-badge">
+                                                                                                    <span className="badge bg-danger">
                                                                                                         {item.backordered_quantity}
                                                                                                     </span>
                                                                                                 ) : (
-                                                                                                    <span className="in-stock-badge">0</span>
+                                                                                                    <span className="badge bg-success">0</span>
                                                                                                 )}
                                                                                             </td>
                                                                                         )}
@@ -954,6 +1215,7 @@ const Orders = ({ mode = 'my' }) => {
                                                                                 ))}
                                                                             </tbody>
                                                                         </table>
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             </td>
@@ -966,10 +1228,12 @@ const Orders = ({ mode = 'my' }) => {
                                 </div>
 
                                 {/* Pagination Controls */}
-                                <div className="pagination-controls">
-                                    <div className="items-per-page">
-                                        <label>Show</label>
+                                <div className="d-flex justify-content-between align-items-center flex-wrap mt-4 gap-3">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <label className="me-2">Show</label>
                                         <select
+                                            className="form-select form-select-sm"
+                                            style={{width: '70px'}}
                                             value={itemsPerPage}
                                             onChange={handleItemsPerPageChange}
                                         >
@@ -981,76 +1245,79 @@ const Orders = ({ mode = 'my' }) => {
                                         <span>entries</span>
                                     </div>
 
-                                    <div className="pagination-info">
+                                    <div className="text-muted small">
                                         Showing {orders.length > 0 ? (pagination.currentPage - 1) * pagination.pageSize + 1 : 0} to {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of {pagination.totalItems} entries
                                     </div>
                                 </div>
 
                                 {/* Pagination */}
                                 {pagination.totalPages > 1 && (
-                                    <div className="pagination-wrapper">
-                                        <ul className="pagination">
-                                            <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
-                                                <button
-                                                    className="page-link"
-                                                    onClick={() => handlePageChange(1)}
-                                                    aria-label="First"
-                                                >
-                                                    <i className="fas fa-angle-double-left"></i>
-                                                </button>
-                                            </li>
-                                            <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
-                                                <button
-                                                    className="page-link"
-                                                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                                    aria-label="Previous"
-                                                >
-                                                    <i className="fas fa-angle-left"></i>
-                                                </button>
-                                            </li>
+                                    <div className="d-flex justify-content-center mt-4">
+                                        <nav aria-label="Orders pagination">
+                                            <ul className="pagination">
+                                                <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(1)}
+                                                        aria-label="First"
+                                                    >
+                                                        <i className="fas fa-angle-double-left"></i>
+                                                    </button>
+                                                </li>
+                                                <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                                        aria-label="Previous"
+                                                    >
+                                                        <i className="fas fa-angle-left"></i>
+                                                    </button>
+                                                </li>
 
-                                            {getPageNumbers().map((page, index) => (
-                                                page === '...' ? (
-                                                    <li key={`ellipsis-${index}`} className="page-item disabled">
-                                                        <span className="page-link">...</span>
-                                                    </li>
-                                                ) : (
-                                                    <li key={page} className={`page-item ${pagination.currentPage === page ? 'active' : ''}`}>
-                                                        <button
-                                                            className="page-link"
-                                                            onClick={() => handlePageChange(page)}
-                                                        >
-                                                            {page}
-                                                        </button>
-                                                    </li>
-                                                )
-                                            ))}
+                                                {getPageNumbers().map((page, index) => (
+                                                    page === '...' ? (
+                                                        <li key={`ellipsis-${index}`} className="page-item disabled">
+                                                            <span className="page-link">...</span>
+                                                        </li>
+                                                    ) : (
+                                                        <li key={page} className={`page-item ${pagination.currentPage === page ? 'active' : ''}`}>
+                                                            <button
+                                                                className="page-link"
+                                                                onClick={() => handlePageChange(page)}
+                                                            >
+                                                                {page}
+                                                            </button>
+                                                        </li>
+                                                    )
+                                                ))}
 
-                                            <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
-                                                <button
-                                                    className="page-link"
-                                                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                                    aria-label="Next"
-                                                >
-                                                    <i className="fas fa-angle-right"></i>
-                                                </button>
-                                            </li>
-                                            <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
-                                                <button
-                                                    className="page-link"
-                                                    onClick={() => handlePageChange(pagination.totalPages)}
-                                                    aria-label="Last"
-                                                >
-                                                    <i className="fas fa-angle-double-right"></i>
-                                                </button>
-                                            </li>
-                                        </ul>
+                                                <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                                        aria-label="Next"
+                                                    >
+                                                        <i className="fas fa-angle-right"></i>
+                                                    </button>
+                                                </li>
+                                                <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(pagination.totalPages)}
+                                                        aria-label="Last"
+                                                    >
+                                                        <i className="fas fa-angle-double-right"></i>
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </nav>
                                     </div>
                                 )}
                             </>
                         )}
                     </div>
                 </div>
+                </>
             )}
         </div>
     );

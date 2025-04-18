@@ -26,6 +26,19 @@
 .categories-container input,
 .categories-container select {
   color: #000 !important;
+  background-color: #fff !important;
+  position: relative;
+  z-index: 5;
+}
+
+/* Specific fix for Orders filter inputs */
+.orders-filter-input {
+  position: relative !important;
+  z-index: 10 !important;
+  color: #000 !important;
+  background-color: #fff !important;
+  font-size: 1rem !important;
+  height: auto !important;
 }
 
 /* Explicitly preserve auth form white text */
