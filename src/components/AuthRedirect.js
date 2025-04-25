@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 const AuthRedirect = ({ tab }) => {
-    const navigate = useNavigate();
+    const history = useHistory();
 
     useEffect(() => {
-        navigate(`/auth#${tab}`);
-    }, [navigate, tab]);
+        history.push(`/auth#${tab}`);
+    }, [history, tab]);
 
     return null;
 };

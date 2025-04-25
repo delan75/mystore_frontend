@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import * as chatService from '../services/chatService';
 import '../styles/MessageNotification.css';
 
 const MessageNotification = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -57,14 +57,14 @@ const MessageNotification = () => {
       setShowModal(!showModal);
     } else {
       // Navigate to chats page if no unread messages
-      navigate('/chats');
+      history.push('/chats');
     }
   };
 
   // Handle message click
   const handleMessageClick = (conversationId) => {
     setShowModal(false);
-    navigate('/chats', { state: { activeConversationId: conversationId } });
+    history.push('/chats', { state: { activeConversationId: conversationId } });
   };
 
   // Format timestamp
@@ -176,7 +176,7 @@ const MessageNotification = () => {
               className="view-all-button"
               onClick={() => {
                 setShowModal(false);
-                navigate('/chats');
+                history.push('/chats');
               }}
             >
               View All Messages

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -14,7 +14,7 @@ const ResetPassword = () => {
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const navigate = useNavigate();
+    const history = useHistory();
 
     // Check if passwords match whenever either password changes
     useEffect(() => {
@@ -59,7 +59,7 @@ const ResetPassword = () => {
         }
     };
 
-    // Label animation logic 
+    // Label animation logic
     const handleInputChange = (e, setValue) => {
         setValue(e.target.value);
         const fieldWrap = e.target.closest('.field-wrap');
@@ -148,7 +148,7 @@ const ResetPassword = () => {
             });
             toast.success('Password reset successful! Please log in with your new password.');
             setError(null);
-            navigate('/auth');
+            history.push('/auth');
         } catch (err) {
             const errorMessage = err.response?.data?.error || 'Password reset failed. Please try again.';
             setError(errorMessage);

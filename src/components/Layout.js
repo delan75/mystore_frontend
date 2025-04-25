@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import CurrencySelector from './CurrencySelector';
@@ -8,7 +8,7 @@ import placeholderAvatar from '../assets/placeholder-avatar.svg';
 
 const Layout = ({ children }) => {
     const { user, logout, loading } = useAuth();
-    const navigate = useNavigate();
+    const history = useHistory();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showProductsSubmenu, setShowProductsSubmenu] = useState(true);
     const [showCategoriesSubmenu, setShowCategoriesSubmenu] = useState(true);
@@ -67,7 +67,7 @@ const Layout = ({ children }) => {
     const handleLogout = async () => {
         await logout();
         toast.success('Logged out successfully.');
-        navigate('/auth');
+        history.push('/auth');
     };
 
     if (loading) {
