@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 
 const Products = () => {
     const { user, accessToken } = useAuth();
-    const navigate = useNavigate();
+    const history = useHistory();
     const { formatPriceSync, selectedCurrency } = useCurrency();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState({});
@@ -128,10 +128,10 @@ const Products = () => {
             console.error('Failed to fetch products:', error);
             if (error.response?.status === 403) {
                 toast.error('You do not have permission to view products');
-                navigate('/dashboard');
+                history.push('/dashboard');
             } else if (error.response?.status === 401) {
                 toast.error('Your session has expired. Please log in again.');
-                navigate('/auth');
+                history.push('/auth');
             } else {
                 toast.error('Failed to fetch products');
             }

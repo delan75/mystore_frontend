@@ -1,6 +1,6 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { useAuth } from './hooks/useAuth';
@@ -28,49 +28,63 @@ import 'react-toastify/dist/ReactToastify.css';
 import './styles/Loading.css';
 
 // Check if user has manager or admin role
-const ManagerRoute = ({ children }) => {
+const ManagerRoute = ({ component: Component, ...rest }) => {
     const { user, loading } = useAuth();
 
-    if (loading) {
-        return (
-            <div className="loading-screen">
-                <div className="spinner">
-                    <i className="fas fa-spinner fa-spin fa-3x"></i>
-                </div>
-                <p>Loading...</p>
-            </div>
-        );
-    }
+    return (
+        <Route
+            {...rest}
+            render={props => {
+                if (loading) {
+                    return (
+                        <div className="loading-screen">
+                            <div className="spinner">
+                                <i className="fas fa-spinner fa-spin fa-3x"></i>
+                            </div>
+                            <p>Loading...</p>
+                        </div>
+                    );
+                }
 
-    // Check if user has the right role
-    if (!user || (user.role !== 'manager' && user.role !== 'admin')) {
-        return <Navigate to="/dashboard" replace />;
-    }
+                // Check if user has the right role
+                if (!user || (user.role !== 'manager' && user.role !== 'admin')) {
+                    return <Redirect to="/dashboard" />;
+                }
 
-    return children;
+                return <Component {...props} />;
+            }}
+        />
+    );
 };
 
 // Check if user has order management access (admin, manager, or cashier)
-const OrderManagementRoute = ({ children }) => {
+const OrderManagementRoute = ({ component: Component, ...rest }) => {
     const { user, loading } = useAuth();
 
-    if (loading) {
-        return (
-            <div className="loading-screen">
-                <div className="spinner">
-                    <i className="fas fa-spinner fa-spin fa-3x"></i>
-                </div>
-                <p>Loading...</p>
-            </div>
-        );
-    }
+    return (
+        <Route
+            {...rest}
+            render={props => {
+                if (loading) {
+                    return (
+                        <div className="loading-screen">
+                            <div className="spinner">
+                                <i className="fas fa-spinner fa-spin fa-3x"></i>
+                            </div>
+                            <p>Loading...</p>
+                        </div>
+                    );
+                }
 
-    // Check if user has the right role
-    if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'cashier')) {
-        return <Navigate to="/dashboard" replace />;
-    }
+                // Check if user has the right role
+                if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'cashier')) {
+                    return <Redirect to="/dashboard" />;
+                }
 
-    return children;
+                return <Component {...props} />;
+            }}
+        />
+    );
 };
 
 function App() {
@@ -78,73 +92,49 @@ function App() {
         <AuthProvider>
             <CurrencyProvider>
                 <Router>
-                <Routes>
+                <Switch>
                     {/* Public routes */}
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/shop" element={<Shop />} />
+                    <Route path="/auth" component={AuthPage} />
+                    <Route path="/reset-password" component={ResetPassword} />
+                    <Route path="/shop" component={Shop} />
 
-                    {/* Protected routes using PrivateRoute component */}
-                    <Route element={<PrivateRoute />}>
-                        {/* Default route redirects to dashboard */}
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    {/* Default route redirects to dashboard */}
+                    <Route exact path="/" render={() => <Redirect to="/dashboard" />} />
 
-                        {/* Regular user routes */}
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/products" element={<Products />} />
-                        <Route path="/orders" element={<Navigate to="/orders/my" replace />} />
-                        <Route path="/orders/create" element={<Orders mode="create" />} />
-                        <Route path="/orders/my" element={<Orders mode="my" />} />
-                        <Route path="/orders/manage" element={
-                            <OrderManagementRoute>
-                                <Orders mode="manage" />
-                            </OrderManagementRoute>
-                        } />
-                        <Route path="/profile" element={<Profile />} />
+                    {/* Regular user routes */}
+                    <PrivateRoute path="/dashboard" component={Dashboard} />
+                    <PrivateRoute path="/products" component={Products} />
+                    <PrivateRoute exact path="/orders" render={() => <Redirect to="/orders/my" />} />
+                    <PrivateRoute path="/orders/create" render={(props) => <Orders {...props} mode="create" />} />
+                    <PrivateRoute path="/orders/my" render={(props) => <Orders {...props} mode="my" />} />
+                    <OrderManagementRoute
+                        path="/orders/manage"
+                        component={(props) => <Orders {...props} mode="manage" />}
+                    />
+                    <PrivateRoute path="/profile" component={Profile} />
 
-                        {/* Chat routes */}
-                        <Route path="/chats" element={<Chats />} />
-                        <Route path="/chats/new" element={<Chats mode="new" />} />
-                        <Route path="/chats/blocked" element={<Chats mode="blocked" />} />
-                        <Route path="/chats/manage" element={
-                            <ManagerRoute>
-                                <Chats mode="manage" />
-                            </ManagerRoute>
-                        } />
+                    {/* Chat routes */}
+                    <PrivateRoute exact path="/chats" component={Chats} />
+                    <PrivateRoute path="/chats/new" render={(props) => <Chats {...props} mode="new" />} />
+                    <PrivateRoute path="/chats/blocked" render={(props) => <Chats {...props} mode="blocked" />} />
+                    <ManagerRoute
+                        path="/chats/manage"
+                        component={(props) => <Chats {...props} mode="manage" />}
+                    />
 
-                        <Route path="/support" element={<Support />} />
-                        <Route path="/account-settings" element={<AccountSettings />} />
-                        <Route path="/privacy" element={<PrivacyCenter />} />
-                        <Route path="/feedback" element={<Feedback />} />
-                        <Route path="/history" element={<History />} />
-                        <Route path="/settings" element={<Settings />} />
+                    <PrivateRoute path="/support" component={Support} />
+                    <PrivateRoute path="/account-settings" component={AccountSettings} />
+                    <PrivateRoute path="/privacy" component={PrivacyCenter} />
+                    <PrivateRoute path="/feedback" component={Feedback} />
+                    <PrivateRoute path="/history" component={History} />
+                    <PrivateRoute path="/settings" component={Settings} />
 
-                        {/* Manager/Admin only routes */}
-                        <Route path="/products/add" element={
-                            <ManagerRoute>
-                                <AddProduct />
-                            </ManagerRoute>
-                        } />
-
-                        <Route path="/categories" element={
-                            <ManagerRoute>
-                                <Categories />
-                            </ManagerRoute>
-                        } />
-
-                        <Route path="/categories/add" element={
-                            <ManagerRoute>
-                                <AddCategory />
-                            </ManagerRoute>
-                        } />
-
-                        <Route path="/categories/edit/:id" element={
-                            <ManagerRoute>
-                                <EditCategory />
-                            </ManagerRoute>
-                        } />
-                    </Route>
-                </Routes>
+                    {/* Manager/Admin only routes */}
+                    <ManagerRoute path="/products/add" component={AddProduct} />
+                    <ManagerRoute path="/categories" component={Categories} />
+                    <ManagerRoute path="/categories/add" component={AddCategory} />
+                    <ManagerRoute path="/categories/edit/:id" component={EditCategory} />
+                </Switch>
                 <ToastContainer />
                 </Router>
             </CurrencyProvider>

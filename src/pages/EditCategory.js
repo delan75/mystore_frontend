@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 const EditCategory = () => {
     const { id } = useParams();
     const { user, accessToken } = useAuth();
-    const navigate = useNavigate();
+    const history = useHistory();
     const [loading, setLoading] = useState(false);
     const [fetchingData, setFetchingData] = useState(true);
     const [parentCategories, setParentCategories] = useState([]);
@@ -27,32 +27,32 @@ const EditCategory = () => {
 
             try {
                 setFetchingData(true);
-                
+
                 // Fetch the category to edit
                 const categoryResponse = await axios.get(`http://localhost:8000/store/categories/${id}/`, {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                     }
                 });
-                
+
                 // Fetch all categories for parent dropdown
                 const categoriesResponse = await axios.get('http://localhost:8000/store/categories/', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                     }
                 });
-                
+
                 setCategory(categoryResponse.data);
-                
+
                 // Filter out the current category from parent options to prevent circular reference
                 const filteredParents = (categoriesResponse.data.results || categoriesResponse.data)
                     .filter(cat => cat.id !== parseInt(id));
-                
+
                 setParentCategories(filteredParents);
             } catch (error) {
                 console.error('Failed to fetch category data:', error);
                 toast.error('Failed to load category data');
-                navigate('/categories');
+                history.push('/categories');
             } finally {
                 setFetchingData(false);
             }
@@ -61,7 +61,7 @@ const EditCategory = () => {
         if (accessToken && id) {
             fetchData();
         }
-    }, [accessToken, id, navigate]);
+    }, [accessToken, id, history]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -70,7 +70,7 @@ const EditCategory = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!category.name) {
             toast.error('Category name is required');
             return;
@@ -78,13 +78,13 @@ const EditCategory = () => {
 
         try {
             setLoading(true);
-            await axios.put(`http://localhost:8000/store/categories/${id}/`, 
+            await axios.put(`http://localhost:8000/store/categories/${id}/`,
                 category,
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
-            
+
             toast.success('Category updated successfully');
-            navigate('/categories');
+            history.push('/categories');
         } catch (error) {
             console.error('Error updating category:', error);
             toast.error(error.response?.data?.detail || 'Failed to update category');
@@ -116,7 +116,7 @@ const EditCategory = () => {
     return (
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">Edit Category</h1>
-            
+
             <div className="bg-white rounded-lg shadow p-6">
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
@@ -134,7 +134,7 @@ const EditCategory = () => {
                             required
                         />
                     </div>
-                    
+
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="slug">
                             Slug
@@ -152,7 +152,7 @@ const EditCategory = () => {
                             The "slug" is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.
                         </p>
                     </div>
-                    
+
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
                             Description
@@ -167,7 +167,7 @@ const EditCategory = () => {
                             rows="4"
                         ></textarea>
                     </div>
-                    
+
                     <div className="mb-6">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="parent">
                             Parent Category
@@ -187,11 +187,11 @@ const EditCategory = () => {
                             ))}
                         </select>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                         <button
                             type="button"
-                            onClick={() => navigate('/categories')}
+                            onClick={() => history.push('/categories')}
                             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                         >
                             Cancel

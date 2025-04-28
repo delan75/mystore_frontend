@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 
@@ -22,10 +22,10 @@ const AuthPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showLoginPassword, setShowLoginPassword] = useState(false);
     const { login, register } = useAuth();
-    const navigate = useNavigate();
+    const history = useHistory();
 
     const handleResetPasswordClick = () => {
-        navigate('/reset-password');
+        history.push('/reset-password');
     };
 
     // Check if passwords match whenever either password changes
@@ -214,7 +214,7 @@ const AuthPage = () => {
             await login(username, password);
             console.log('Login successful, navigating to dashboard');
             toast.success('Logged in successfully!');
-            navigate('/dashboard');
+            history.push('/dashboard');
         } catch (err) {
             console.error('Login error details:', err);
 
@@ -481,7 +481,7 @@ Please save this username as you'll need it to log in.`;
                                 onFocus={handleInputFocus}
                                 className="auth-select"
                             >
-                                <option value="">Select Gender</option>
+                                <option value=""></option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
                                 <option value="O">Other</option>
@@ -558,7 +558,7 @@ Please save this username as you'll need it to log in.`;
                             </div>
                         </div>
                         <p className="forgot">
-                            <a href="/reset-password">Forgot Password?</a>
+                            <a href="/reset-password" onClick={handleResetPasswordClick}>Forgot Password?</a>
                         </p>
                         <button className="button button-block">Log In</button>
                     </form>

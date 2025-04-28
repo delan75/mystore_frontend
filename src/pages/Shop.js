@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrency } from '../context/CurrencyContext';
 import PriceDisplay from '../components/PriceDisplay';
 
 const Shop = () => {
-    const navigate = useNavigate();
+    const history = useHistory();
     const { user } = useAuth();
     // Currency conversion is handled by PriceDisplay component
     const [filters, setFilters] = useState({
@@ -57,10 +57,11 @@ const Shop = () => {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Initial load only
     useEffect(() => {
         fetchProducts(true);
-    }, []); // Initial load - fetchProducts is intentionally omitted from deps to avoid infinite loop
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty dependency array means this runs once on mount
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -79,7 +80,7 @@ const Shop = () => {
     const handleAddToCart = (product) => {
         if (!user) {
             toast.info('Please login to add items to cart');
-            navigate('/auth');
+            history.push('/auth');
             return;
         }
         toast.success(`${product.name} added to cart`);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -48,7 +48,7 @@ const Orders = ({ mode = 'my' }) => {
     const hasOrderManagementAccess = isAdmin || isManager || isCashier;
     const canModifyOrders = isAdmin || isManager;
 
-    const navigate = useNavigate();
+    const history = useHistory();
 
     // Define fetchOrders function outside useEffect so it can be called from elsewhere
     const fetchOrders = async (pageNumber) => {
@@ -269,7 +269,7 @@ const Orders = ({ mode = 'my' }) => {
                 );
 
                 // Navigate to dashboard after successful checkout
-                navigate('/dashboard');
+                history.push('/dashboard');
             } catch (error) {
                 console.error('Failed to checkout order:', error);
 
@@ -887,9 +887,9 @@ const Orders = ({ mode = 'my' }) => {
                     onOrderCreated={(newOrder) => {
                         handleOrderCreated(newOrder);
                         // Redirect to My Orders after creation
-                        navigate('/orders/my');
+                        history.push('/orders/my');
                     }}
-                    onCancel={() => navigate('/orders/my')}
+                    onCancel={() => history.push('/orders/my')}
                 />
             )}
 
