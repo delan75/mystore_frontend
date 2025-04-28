@@ -481,7 +481,7 @@ Please save this username as you'll need it to log in.`;
                                 onFocus={handleInputFocus}
                                 className="auth-select"
                             >
-                                <option value="">Select Gender</option>
+                                <option value=""></option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
                                 <option value="O">Other</option>
@@ -558,7 +558,7 @@ Please save this username as you'll need it to log in.`;
                             </div>
                         </div>
                         <p className="forgot">
-                            <a href="/reset-password">Forgot Password?</a>
+                            <a href="/reset-password" onClick={handleResetPasswordClick}>Forgot Password?</a>
                         </p>
                         <button className="button button-block">Log In</button>
                     </form>
