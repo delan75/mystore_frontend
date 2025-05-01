@@ -1,10 +1,10 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { useAuth } from './hooks/useAuth';
-import PrivateRoute from './components/PrivateRoute';
+import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -27,64 +27,70 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/Loading.css';
 
-// Check if user has manager or admin role
-const ManagerRoute = ({ component: Component, ...rest }) => {
+// Protected route component
+const RequireAuth = ({ children }) => {
     const { user, loading } = useAuth();
 
-    return (
-        <Route
-            {...rest}
-            render={props => {
-                if (loading) {
-                    return (
-                        <div className="loading-screen">
-                            <div className="spinner">
-                                <i className="fas fa-spinner fa-spin fa-3x"></i>
-                            </div>
-                            <p>Loading...</p>
-                        </div>
-                    );
-                }
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner">
+                    <i className="fas fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
-                // Check if user has the right role
-                if (!user || (user.role !== 'manager' && user.role !== 'admin')) {
-                    return <Redirect to="/dashboard" />;
-                }
+    if (!user) {
+        return <Navigate to="/auth" replace />;
+    }
 
-                return <Component {...props} />;
-            }}
-        />
-    );
+    return <Layout>{children}</Layout>;
 };
 
-// Check if user has order management access (admin, manager, or cashier)
-const OrderManagementRoute = ({ component: Component, ...rest }) => {
+// Manager/Admin route component
+const RequireManagerRole = ({ children }) => {
     const { user, loading } = useAuth();
 
-    return (
-        <Route
-            {...rest}
-            render={props => {
-                if (loading) {
-                    return (
-                        <div className="loading-screen">
-                            <div className="spinner">
-                                <i className="fas fa-spinner fa-spin fa-3x"></i>
-                            </div>
-                            <p>Loading...</p>
-                        </div>
-                    );
-                }
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner">
+                    <i className="fas fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
-                // Check if user has the right role
-                if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'cashier')) {
-                    return <Redirect to="/dashboard" />;
-                }
+    if (!user || (user.role !== 'manager' && user.role !== 'admin')) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
-                return <Component {...props} />;
-            }}
-        />
-    );
+    return <Layout>{children}</Layout>;
+};
+
+// Order management route component
+const RequireOrderManagementRole = ({ children }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner">
+                    <i className="fas fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'cashier')) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return <Layout>{children}</Layout>;
 };
 
 function App() {
@@ -92,49 +98,123 @@ function App() {
         <AuthProvider>
             <CurrencyProvider>
                 <Router>
-                <Switch>
+                <Routes>
                     {/* Public routes */}
-                    <Route path="/auth" component={AuthPage} />
-                    <Route path="/reset-password" component={ResetPassword} />
-                    <Route path="/shop" component={Shop} />
+                    <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/shop" element={<Shop />} />
 
                     {/* Default route redirects to dashboard */}
-                    <Route exact path="/" render={() => <Redirect to="/dashboard" />} />
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
                     {/* Regular user routes */}
-                    <PrivateRoute path="/dashboard" component={Dashboard} />
-                    <PrivateRoute path="/products" component={Products} />
-                    <PrivateRoute exact path="/orders" render={() => <Redirect to="/orders/my" />} />
-                    <PrivateRoute path="/orders/create" render={(props) => <Orders {...props} mode="create" />} />
-                    <PrivateRoute path="/orders/my" render={(props) => <Orders {...props} mode="my" />} />
-                    <OrderManagementRoute
-                        path="/orders/manage"
-                        component={(props) => <Orders {...props} mode="manage" />}
-                    />
-                    <PrivateRoute path="/profile" component={Profile} />
+                    <Route path="/dashboard" element={
+                        <RequireAuth>
+                            <Dashboard />
+                        </RequireAuth>
+                    } />
+                    <Route path="/products" element={
+                        <RequireAuth>
+                            <Products />
+                        </RequireAuth>
+                    } />
+                    <Route path="/orders" element={<Navigate to="/orders/my" replace />} />
+                    <Route path="/orders/create" element={
+                        <RequireAuth>
+                            <Orders mode="create" />
+                        </RequireAuth>
+                    } />
+                    <Route path="/orders/my" element={
+                        <RequireAuth>
+                            <Orders mode="my" />
+                        </RequireAuth>
+                    } />
+                    <Route path="/orders/manage" element={
+                        <RequireOrderManagementRole>
+                            <Orders mode="manage" />
+                        </RequireOrderManagementRole>
+                    } />
+                    <Route path="/profile" element={
+                        <RequireAuth>
+                            <Profile />
+                        </RequireAuth>
+                    } />
 
                     {/* Chat routes */}
-                    <PrivateRoute exact path="/chats" component={Chats} />
-                    <PrivateRoute path="/chats/new" render={(props) => <Chats {...props} mode="new" />} />
-                    <PrivateRoute path="/chats/blocked" render={(props) => <Chats {...props} mode="blocked" />} />
-                    <ManagerRoute
-                        path="/chats/manage"
-                        component={(props) => <Chats {...props} mode="manage" />}
-                    />
+                    <Route path="/chats" element={
+                        <RequireAuth>
+                            <Chats />
+                        </RequireAuth>
+                    } />
+                    <Route path="/chats/new" element={
+                        <RequireAuth>
+                            <Chats mode="new" />
+                        </RequireAuth>
+                    } />
+                    <Route path="/chats/blocked" element={
+                        <RequireAuth>
+                            <Chats mode="blocked" />
+                        </RequireAuth>
+                    } />
+                    <Route path="/chats/manage" element={
+                        <RequireManagerRole>
+                            <Chats mode="manage" />
+                        </RequireManagerRole>
+                    } />
 
-                    <PrivateRoute path="/support" component={Support} />
-                    <PrivateRoute path="/account-settings" component={AccountSettings} />
-                    <PrivateRoute path="/privacy" component={PrivacyCenter} />
-                    <PrivateRoute path="/feedback" component={Feedback} />
-                    <PrivateRoute path="/history" component={History} />
-                    <PrivateRoute path="/settings" component={Settings} />
+                    <Route path="/support" element={
+                        <RequireAuth>
+                            <Support />
+                        </RequireAuth>
+                    } />
+                    <Route path="/account-settings" element={
+                        <RequireAuth>
+                            <AccountSettings />
+                        </RequireAuth>
+                    } />
+                    <Route path="/privacy" element={
+                        <RequireAuth>
+                            <PrivacyCenter />
+                        </RequireAuth>
+                    } />
+                    <Route path="/feedback" element={
+                        <RequireAuth>
+                            <Feedback />
+                        </RequireAuth>
+                    } />
+                    <Route path="/history" element={
+                        <RequireAuth>
+                            <History />
+                        </RequireAuth>
+                    } />
+                    <Route path="/settings" element={
+                        <RequireAuth>
+                            <Settings />
+                        </RequireAuth>
+                    } />
 
                     {/* Manager/Admin only routes */}
-                    <ManagerRoute path="/products/add" component={AddProduct} />
-                    <ManagerRoute path="/categories" component={Categories} />
-                    <ManagerRoute path="/categories/add" component={AddCategory} />
-                    <ManagerRoute path="/categories/edit/:id" component={EditCategory} />
-                </Switch>
+                    <Route path="/products/add" element={
+                        <RequireManagerRole>
+                            <AddProduct />
+                        </RequireManagerRole>
+                    } />
+                    <Route path="/categories" element={
+                        <RequireManagerRole>
+                            <Categories />
+                        </RequireManagerRole>
+                    } />
+                    <Route path="/categories/add" element={
+                        <RequireManagerRole>
+                            <AddCategory />
+                        </RequireManagerRole>
+                    } />
+                    <Route path="/categories/edit/:id" element={
+                        <RequireManagerRole>
+                            <EditCategory />
+                        </RequireManagerRole>
+                    } />
+                </Routes>
                 <ToastContainer />
                 </Router>
             </CurrencyProvider>

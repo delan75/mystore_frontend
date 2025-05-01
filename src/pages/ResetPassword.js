@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
     requestPasswordReset,
@@ -34,7 +34,7 @@ const ResetPassword = () => {
     const [timerActive, setTimerActive] = useState(false);
     const timerRef = useRef(null);
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     // Check if passwords match whenever either password changes
     useEffect(() => {
@@ -279,7 +279,7 @@ const ResetPassword = () => {
             if (result.success) {
                 toast.success('Password reset successful! Please log in with your new password.');
                 setError(null);
-                history.push('/auth');
+                navigate('/auth');
             } else {
                 setError(result.message);
                 toast.error(result.message);

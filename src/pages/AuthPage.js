@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 
@@ -22,10 +22,10 @@ const AuthPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showLoginPassword, setShowLoginPassword] = useState(false);
     const { login, register } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const handleResetPasswordClick = () => {
-        history.push('/reset-password');
+        navigate('/reset-password');
     };
 
     // Check if passwords match whenever either password changes
@@ -214,7 +214,7 @@ const AuthPage = () => {
             await login(username, password);
             console.log('Login successful, navigating to dashboard');
             toast.success('Logged in successfully!');
-            history.push('/dashboard');
+            navigate('/dashboard');
         } catch (err) {
             console.error('Login error details:', err);
 

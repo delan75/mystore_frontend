@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -7,7 +7,7 @@ import '../styles/CategoryForm.css';
 
 const AddCategory = () => {
     const { user, accessToken } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [parentCategories, setParentCategories] = useState([]);
     const [category, setCategory] = useState({
@@ -69,7 +69,7 @@ const AddCategory = () => {
             );
 
             toast.success('Category created successfully');
-            history.push('/categories');
+            navigate('/categories');
         } catch (error) {
             console.error('Error creating category:', error);
             toast.error(error.response?.data?.detail || 'Failed to create category');
@@ -169,7 +169,7 @@ const AddCategory = () => {
                     <div className="form-actions">
                         <button
                             type="button"
-                            onClick={() => history.push('/categories')}
+                            onClick={() => navigate('/categories')}
                             className="btn-cancel"
                         >
                             Cancel

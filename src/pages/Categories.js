@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 import '../styles/Categories.css';
 
 const Categories = () => {
     const { user, accessToken } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [categories, setCategories] = useState([]);
     const [categoryMap, setCategoryMap] = useState({});
     const [loading, setLoading] = useState(true);
@@ -61,10 +61,10 @@ const Categories = () => {
         } catch (error) {
             if (error.response?.status === 403) {
                 toast.error('You do not have permission to view categories');
-                history.push('/dashboard');
+                navigate('/dashboard');
             } else if (error.response?.status === 401) {
                 toast.error('Your session has expired. Please log in again.');
-                history.push('/auth');
+                navigate('/auth');
             } else {
                 toast.error('Failed to fetch categories');
             }

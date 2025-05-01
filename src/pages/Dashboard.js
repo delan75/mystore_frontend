@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrency } from '../context/CurrencyContext';
 import axios from '../utils/axios';
@@ -8,7 +8,7 @@ import '../styles/Dashboard.css';
 
 const Dashboard = () => {
     const { user, accessToken } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const { formatPriceSync, selectedCurrency } = useCurrency();
     const [orders, setOrders] = useState([]);
     const [orderSummary, setOrderSummary] = useState(null);
@@ -16,9 +16,9 @@ const Dashboard = () => {
     // Redirect if not authenticated
     useEffect(() => {
         if (!user || !accessToken) {
-            history.push('/auth');
+            navigate('/auth');
         }
-    }, [user, accessToken, history]);
+    }, [user, accessToken, navigate]);
 
     // Fetch orders and summary
     useEffect(() => {

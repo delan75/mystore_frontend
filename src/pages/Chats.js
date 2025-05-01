@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ConversationList from '../components/chat/ConversationList';
 import ChatWindow from '../components/chat/ChatWindow';
@@ -11,7 +11,7 @@ import '../styles/Chats.css';
 
 const Chats = ({ mode = 'my' }) => {
   const { user } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -397,7 +397,7 @@ const Chats = ({ mode = 'my' }) => {
           <h1 className="chats-title">{getPageTitle()}</h1>
           <div className="chats-actions">
             <button
-              onClick={() => history.push('/chats')}
+              onClick={() => navigate('/chats')}
               className="btn-create-chat"
             >
               <i className="fas fa-arrow-left"></i> Back to Chats

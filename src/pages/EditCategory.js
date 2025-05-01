@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 const EditCategory = () => {
     const { id } = useParams();
     const { user, accessToken } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [fetchingData, setFetchingData] = useState(true);
     const [parentCategories, setParentCategories] = useState([]);
@@ -52,7 +52,7 @@ const EditCategory = () => {
             } catch (error) {
                 console.error('Failed to fetch category data:', error);
                 toast.error('Failed to load category data');
-                history.push('/categories');
+                navigate('/categories');
             } finally {
                 setFetchingData(false);
             }
@@ -61,7 +61,7 @@ const EditCategory = () => {
         if (accessToken && id) {
             fetchData();
         }
-    }, [accessToken, id, history]);
+    }, [accessToken, id, navigate]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -84,7 +84,7 @@ const EditCategory = () => {
             );
 
             toast.success('Category updated successfully');
-            history.push('/categories');
+            navigate('/categories');
         } catch (error) {
             console.error('Error updating category:', error);
             toast.error(error.response?.data?.detail || 'Failed to update category');
@@ -191,7 +191,7 @@ const EditCategory = () => {
                     <div className="flex items-center justify-between">
                         <button
                             type="button"
-                            onClick={() => history.push('/categories')}
+                            onClick={() => navigate('/categories')}
                             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                         >
                             Cancel

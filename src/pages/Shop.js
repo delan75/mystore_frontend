@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrency } from '../context/CurrencyContext';
 import PriceDisplay from '../components/PriceDisplay';
 
 const Shop = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { user } = useAuth();
     // Currency conversion is handled by PriceDisplay component
     const [filters, setFilters] = useState({
@@ -80,7 +80,7 @@ const Shop = () => {
     const handleAddToCart = (product) => {
         if (!user) {
             toast.info('Please login to add items to cart');
-            history.push('/auth');
+            navigate('/auth');
             return;
         }
         toast.success(`${product.name} added to cart`);
