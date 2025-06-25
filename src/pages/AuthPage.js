@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 
 const AuthPage = () => {
-    const [activeTab, setActiveTab] = useState('signup');
+    const [activeTab, setActiveTab] = useState('login');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');

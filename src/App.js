@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import PrivateRoute from './components/PrivateRoute';
 import AuthPage from './pages/AuthPage';
 import ResetPassword from './pages/ResetPassword';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Shop from './pages/Shop';
 import Products from './pages/Products';
@@ -90,16 +91,14 @@ const OrderManagementRoute = ({ component: Component, ...rest }) => {
 function App() {
     return (
         <AuthProvider>
-            <CurrencyProvider>
-                <Router>
+                <CurrencyProvider>
+                    <Router>
                 <Switch>
                     {/* Public routes */}
+                    <Route exact path="/" component={LandingPage} />
                     <Route path="/auth" component={AuthPage} />
                     <Route path="/reset-password" component={ResetPassword} />
                     <Route path="/shop" component={Shop} />
-
-                    {/* Default route redirects to dashboard */}
-                    <Route exact path="/" render={() => <Redirect to="/dashboard" />} />
 
                     {/* Regular user routes */}
                     <PrivateRoute path="/dashboard" component={Dashboard} />

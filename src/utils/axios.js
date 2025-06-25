@@ -12,12 +12,15 @@ const instance = axios.create({
 instance.interceptors.request.use(
     (config) => {
         // Skip token handling for refresh token requests to avoid loops
-        // and for currency-related endpoints to ensure all users can access them
+        // and for public endpoints that don't require authentication
         if (config.url && (
             config.url.includes('/auth/token/refresh/') ||
-            config.url.includes('/store/currencies/')
+            config.url.includes('/store/currencies/') ||
+            config.url.includes('/store/categories/') ||
+            config.url.includes('/store/products/') ||
+            config.url.includes('/store/products/search/')
         )) {
-            console.log(`Skipping token for ${config.url}`);
+            console.log(`Skipping token for public endpoint: ${config.url}`);
             return config;
         }
 

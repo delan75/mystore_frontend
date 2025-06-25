@@ -1,10 +1,43 @@
-<<<<<<< HEAD
-# mystore_frontend
-Ecommerce Store Project with React 
-=======
-# Getting Started with Create React App
+# MyStore Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Ecommerce Store Project with React 19 - Fresh Farm Products
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) and upgraded to React 19.
+
+## Key Features
+
+- **React 19 Native Metadata Support**: Uses React 19's built-in `<title>`, `<meta>`, and `<link>` tags instead of react-helmet-async
+- **Modern SEO Implementation**: Dynamic meta tags, Open Graph, Twitter Cards, and structured data
+- **Mobile-First Design**: Responsive components with touch-friendly interactions
+- **Performance Optimized**: Lazy loading, caching, and optimized images
+- **Accessibility First**: WCAG 2.1 AA compliance with proper ARIA labels
+
+## SEO and Metadata
+
+This project uses **React 19's native metadata support** instead of third-party libraries like react-helmet-async. This provides:
+
+- ✅ No dependency conflicts with React 19
+- ✅ Better performance (native browser support)
+- ✅ Automatic deduplication and streaming SSR
+- ✅ Future-proof implementation
+
+### Example Usage:
+
+```jsx
+// React 19 Native Metadata (Current Approach)
+function Page() {
+  return (
+    <>
+      <title>My Page Title</title>
+      <meta name="description" content="Page description" />
+      <meta property="og:title" content="My Page Title" />
+      {/* page content */}
+    </>
+  );
+}
+```
+
+**Note**: We previously used react-helmet-async but migrated to React 19's native support for better compatibility and performance.
 
 ## Available Scripts
 
@@ -72,4 +105,29 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
->>>>>>> 90d8118 (Initialize project using Create React App)
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── SEO/                    # SEO components using React 19 native metadata
+│   ├── UI/                     # Reusable UI components
+│   ├── Layout/                 # Layout components (Header, Footer, etc.)
+│   └── Landing/                # Landing page sections
+├── context/                    # React context providers
+├── hooks/                      # Custom React hooks
+├── services/                   # API services
+├── styles/                     # Global styles and design tokens
+└── utils/                      # Utility functions
+```
+
+## Dependencies
+
+This project uses modern React 19 features and avoids legacy dependencies:
+
+- **React 19**: Latest React with native metadata support
+- **No react-helmet-async**: Uses React 19 native `<title>` and `<meta>` tags
+- **React Router v5**: Client-side routing
+- **Axios**: HTTP client for API calls
+- **FontAwesome**: Icon library
