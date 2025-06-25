@@ -1,0 +1,183 @@
+/* Logo Component Styles */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-decoration: none;
+  color: var(--color-primary-green);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-heading);
+  transition: all var(--transition-fast);
+}
+
+.logo:hover {
+  color: var(--color-accent-green);
+  text-decoration: none;
+}
+
+.logo:focus {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* Logo Icon */
+.logo__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo__icon svg {
+  transition: transform var(--transition-fast);
+}
+
+.logo:hover .logo__icon svg {
+  transform: scale(1.05);
+}
+
+/* Logo Text */
+.logo__text {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Logo Variants */
+.logo--default {
+  color: var(--color-primary-green);
+}
+
+.logo--light {
+  color: var(--color-white);
+}
+
+.logo--dark {
+  color: var(--color-dark-gray);
+}
+
+.logo--footer {
+  color: var(--color-white);
+}
+
+.logo--footer:hover {
+  color: var(--color-accent-green);
+}
+
+/* Logo Sizes */
+.logo--small {
+  font-size: var(--font-size-sm);
+}
+
+.logo--small .logo__icon {
+  width: 24px;
+  height: 24px;
+}
+
+.logo--medium {
+  font-size: var(--font-size-lg);
+}
+
+.logo--medium .logo__icon {
+  width: 32px;
+  height: 32px;
+}
+
+.logo--large {
+  font-size: var(--font-size-xl);
+}
+
+.logo--large .logo__icon {
+  width: 40px;
+  height: 40px;
+}
+
+.logo--extra-large {
+  font-size: var(--font-size-2xl);
+}
+
+.logo--extra-large .logo__icon {
+  width: 48px;
+  height: 48px;
+}
+
+/* Icon Only */
+.logo--icon-only .logo__text {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .logo--medium {
+    font-size: var(--font-size-base);
+  }
+  
+  .logo--medium .logo__icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .logo--large {
+    font-size: var(--font-size-lg);
+  }
+  
+  .logo--large .logo__icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo--medium .logo__text {
+    display: none;
+  }
+  
+  .logo--large .logo__text {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* Animation for loading states */
+@keyframes logo-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.logo--loading {
+  animation: logo-pulse 1.5s ease-in-out infinite;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .logo {
+    border: 1px solid transparent;
+  }
+  
+  .logo:focus {
+    border-color: currentColor;
+    outline: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .logo,
+  .logo__icon svg {
+    transition: none;
+  }
+  
+  .logo:hover .logo__icon svg {
+    transform: none;
+  }
+  
+  .logo--loading {
+    animation: none;
+  }
+}

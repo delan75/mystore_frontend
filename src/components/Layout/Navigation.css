@@ -1,0 +1,208 @@
+/* Navigation Component Styles */
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.navigation__list {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navigation__item {
+  position: relative;
+}
+
+.navigation__link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-dark-gray);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.navigation__link:hover {
+  color: var(--color-primary-green);
+  background: var(--color-light-gray);
+  text-decoration: none;
+}
+
+.navigation__link:focus {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+}
+
+.navigation__link--active {
+  color: var(--color-primary-green);
+  background: var(--color-light-gray);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Dropdown Styles */
+.navigation__item--has-dropdown .navigation__link::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  margin-left: var(--spacing-xs);
+  transition: transform var(--transition-fast);
+}
+
+.navigation__item--dropdown-open .navigation__link::after {
+  transform: rotate(180deg);
+}
+
+.navigation__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 250px;
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all var(--transition-fast);
+  z-index: 1000;
+  padding: var(--spacing-sm);
+}
+
+.navigation__item--dropdown-open .navigation__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.navigation__dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navigation__dropdown-item {
+  margin-bottom: var(--spacing-xs);
+}
+
+.navigation__dropdown-item:last-child {
+  margin-bottom: 0;
+}
+
+.navigation__dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-dark-gray);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+}
+
+.navigation__dropdown-link:hover {
+  color: var(--color-primary-green);
+  background: var(--color-light-gray);
+  text-decoration: none;
+}
+
+.navigation__dropdown-link:focus {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 1px;
+}
+
+/* Category Icons */
+.navigation__category-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--border-radius-sm);
+  background: var(--color-accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+}
+
+/* Mobile Hidden */
+@media (max-width: 1024px) {
+  .navigation {
+    display: none;
+  }
+}
+
+/* Tablet Adjustments */
+@media (max-width: 1200px) {
+  .navigation__list {
+    gap: var(--spacing-sm);
+  }
+  
+  .navigation__link {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .navigation__link {
+    border: 1px solid transparent;
+  }
+  
+  .navigation__link:hover,
+  .navigation__link--active {
+    border-color: currentColor;
+  }
+  
+  .navigation__dropdown {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .navigation__link,
+  .navigation__dropdown,
+  .navigation__dropdown-link,
+  .navigation__item--has-dropdown .navigation__link::after {
+    transition: none;
+  }
+  
+  .navigation__dropdown {
+    transform: none;
+  }
+  
+  .navigation__item--dropdown-open .navigation__dropdown {
+    transform: none;
+  }
+}
+
+/* Focus management for keyboard navigation */
+.navigation__item:focus-within .navigation__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Ensure dropdown stays open when navigating with keyboard */
+.navigation__dropdown:focus-within {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}

@@ -1,38 +1,47 @@
-.App {
-  text-align: center;
+/* App.css - Main Application Layout */
+
+/* Global Layout */
+.main-content {
+  min-height: calc(100vh - 80px); /* Adjust based on header height */
+  padding-top: 0; /* Header will be fixed, so no padding needed */
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Ensure proper stacking context */
+.main-content {
+  position: relative;
+  z-index: 1;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+/* Landing page specific adjustments */
+.landing-page {
+  padding-top: 0 !important; /* Remove any top padding since header is separate */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    min-height: calc(100vh - 70px); /* Smaller header on mobile */
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Smooth transitions for layout changes */
+.main-content {
+  transition: padding-top 0.3s ease;
+}
+
+/* Ensure footer stays at bottom */
+body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  min-height: 100vh;
 }
 
-.App-link {
-  color: #61dafb;
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.main-content {
+  flex: 1;
 }

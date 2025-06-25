@@ -1,5 +1,5 @@
 import React from 'react';
-import { LandingPageDataProvider, useLandingPageData } from '../context/LandingPageContext';
+import { useLandingPageData } from '../context/LandingPageContext';
 import { useLandingPageSEO } from '../hooks/useSEO';
 import SEOHead from '../components/SEO/SEOHead';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
@@ -14,8 +14,8 @@ import NewsletterCTASection from '../components/Landing/NewsletterCTASection';
 
 import './LandingPage.css';
 
-// Landing page content component
-const LandingPageContent = () => {
+// Landing page component
+const LandingPage = () => {
   const { loading, error } = useLandingPageData();
 
   // Get SEO configuration
@@ -96,15 +96,6 @@ const LandingPageContent = () => {
       {/* Newsletter & Final CTA Section */}
       <NewsletterCTASection />
     </div>
-  );
-};
-
-// Main landing page component with provider
-const LandingPage = () => {
-  return (
-    <LandingPageDataProvider>
-      <LandingPageContent />
-    </LandingPageDataProvider>
   );
 };
 

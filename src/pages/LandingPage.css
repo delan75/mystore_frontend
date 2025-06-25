@@ -4,6 +4,7 @@
   min-height: 100vh;
   background: var(--color-white);
   position: relative;
+  padding-top: 80px; /* Account for fixed header */
 }
 
 /* Loading State */
@@ -83,6 +84,10 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .landing-page {
+    padding-top: 70px; /* Smaller header on mobile */
+  }
+
   .landing-page__loading,
   .landing-page__error-content {
     padding: var(--spacing-2xl);

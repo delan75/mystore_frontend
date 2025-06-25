@@ -1,10 +1,13 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route, Redirect, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { LandingPageDataProvider } from './context/LandingPageContext';
 import { useAuth } from './hooks/useAuth';
 import PrivateRoute from './components/PrivateRoute';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
 import AuthPage from './pages/AuthPage';
 import ResetPassword from './pages/ResetPassword';
 import LandingPage from './pages/LandingPage';
@@ -27,6 +30,7 @@ import EditCategory from './pages/EditCategory';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/Loading.css';
+import './App.css';
 
 // Check if user has manager or admin role
 const ManagerRoute = ({ component: Component, ...rest }) => {
@@ -88,56 +92,83 @@ const OrderManagementRoute = ({ component: Component, ...rest }) => {
     );
 };
 
+// Layout component that conditionally shows Header and Footer
+const Layout = ({ children }) => {
+    const location = useLocation();
+
+    // Pages that should not show header/footer
+    const noLayoutPages = ['/auth', '/reset-password'];
+    const showLayout = !noLayoutPages.some(page => location.pathname.startsWith(page));
+
+    if (!showLayout) {
+        return children;
+    }
+
+    return (
+        <>
+            <Header />
+            <main className="main-content">
+                {children}
+            </main>
+            <Footer />
+        </>
+    );
+};
+
 function App() {
     return (
         <AuthProvider>
-                <CurrencyProvider>
+            <CurrencyProvider>
+                <LandingPageDataProvider>
                     <Router>
-                <Switch>
-                    {/* Public routes */}
-                    <Route exact path="/" component={LandingPage} />
-                    <Route path="/auth" component={AuthPage} />
-                    <Route path="/reset-password" component={ResetPassword} />
-                    <Route path="/shop" component={Shop} />
+                        <Layout>
+                        <Switch>
+                            {/* Public routes */}
+                            <Route exact path="/" component={LandingPage} />
+                            <Route path="/auth" component={AuthPage} />
+                            <Route path="/reset-password" component={ResetPassword} />
+                            <Route path="/shop" component={Shop} />
 
-                    {/* Regular user routes */}
-                    <PrivateRoute path="/dashboard" component={Dashboard} />
-                    <PrivateRoute path="/products" component={Products} />
-                    <PrivateRoute exact path="/orders" render={() => <Redirect to="/orders/my" />} />
-                    <PrivateRoute path="/orders/create" render={(props) => <Orders {...props} mode="create" />} />
-                    <PrivateRoute path="/orders/my" render={(props) => <Orders {...props} mode="my" />} />
-                    <OrderManagementRoute
-                        path="/orders/manage"
-                        component={(props) => <Orders {...props} mode="manage" />}
-                    />
-                    <PrivateRoute path="/profile" component={Profile} />
+                            {/* Regular user routes */}
+                            <PrivateRoute path="/dashboard" component={Dashboard} />
+                            <PrivateRoute path="/products" component={Products} />
+                            <PrivateRoute exact path="/orders" render={() => <Redirect to="/orders/my" />} />
+                            <PrivateRoute path="/orders/create" render={(props) => <Orders {...props} mode="create" />} />
+                            <PrivateRoute path="/orders/my" render={(props) => <Orders {...props} mode="my" />} />
+                            <OrderManagementRoute
+                                path="/orders/manage"
+                                component={(props) => <Orders {...props} mode="manage" />}
+                            />
+                            <PrivateRoute path="/profile" component={Profile} />
 
-                    {/* Chat routes */}
-                    <PrivateRoute exact path="/chats" component={Chats} />
-                    <PrivateRoute path="/chats/new" render={(props) => <Chats {...props} mode="new" />} />
-                    <PrivateRoute path="/chats/blocked" render={(props) => <Chats {...props} mode="blocked" />} />
-                    <ManagerRoute
-                        path="/chats/manage"
-                        component={(props) => <Chats {...props} mode="manage" />}
-                    />
+                            {/* Chat routes */}
+                            <PrivateRoute exact path="/chats" component={Chats} />
+                            <PrivateRoute path="/chats/new" render={(props) => <Chats {...props} mode="new" />} />
+                            <PrivateRoute path="/chats/blocked" render={(props) => <Chats {...props} mode="blocked" />} />
+                            <ManagerRoute
+                                path="/chats/manage"
+                                component={(props) => <Chats {...props} mode="manage" />}
+                            />
 
-                    <PrivateRoute path="/support" component={Support} />
-                    <PrivateRoute path="/account-settings" component={AccountSettings} />
-                    <PrivateRoute path="/privacy" component={PrivacyCenter} />
-                    <PrivateRoute path="/feedback" component={Feedback} />
-                    <PrivateRoute path="/history" component={History} />
-                    <PrivateRoute path="/settings" component={Settings} />
+                            <PrivateRoute path="/support" component={Support} />
+                            <PrivateRoute path="/account-settings" component={AccountSettings} />
+                            <PrivateRoute path="/privacy" component={PrivacyCenter} />
+                            <PrivateRoute path="/feedback" component={Feedback} />
+                            <PrivateRoute path="/history" component={History} />
+                            <PrivateRoute path="/settings" component={Settings} />
 
-                    {/* Manager/Admin only routes */}
-                    <ManagerRoute path="/products/add" component={AddProduct} />
-                    <ManagerRoute path="/categories" component={Categories} />
-                    <ManagerRoute path="/categories/add" component={AddCategory} />
-                    <ManagerRoute path="/categories/edit/:id" component={EditCategory} />
-                </Switch>
-                <ToastContainer />
+                            {/* Manager/Admin only routes */}
+                            <ManagerRoute path="/products/add" component={AddProduct} />
+                            <ManagerRoute path="/categories" component={Categories} />
+                            <ManagerRoute path="/categories/add" component={AddCategory} />
+                            <ManagerRoute path="/categories/edit/:id" component={EditCategory} />
+                        </Switch>
+                    </Layout>
+                    <ToastContainer />
                 </Router>
-            </CurrencyProvider>
-        </AuthProvider>
+            </LandingPageDataProvider>
+        </CurrencyProvider>
+    </AuthProvider>
     );
 }
 
