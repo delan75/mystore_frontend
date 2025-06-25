@@ -44,11 +44,15 @@ const EditCategory = () => {
 
                 setCategory(categoryResponse.data);
 
-                // Filter out the current category from parent options to prevent circular reference
-                const filteredParents = (categoriesResponse.data.results || categoriesResponse.data)
-                    .filter(cat => cat.id !== parseInt(id));
+                // Get all categories from the response
+                const allCategories = categoriesResponse.data.results || categoriesResponse.data;
 
-                setParentCategories(filteredParents);
+                // Filter out the current category to prevent circular reference
+                const filteredCategories = allCategories.filter(cat => cat.id !== parseInt(id));
+                console.log('All parent categories:', filteredCategories);
+
+                // Set the parent categories state with filtered categories
+                setParentCategories(filteredCategories);
             } catch (error) {
                 console.error('Failed to fetch category data:', error);
                 toast.error('Failed to load category data');
@@ -63,9 +67,29 @@ const EditCategory = () => {
         }
     }, [accessToken, id, navigate]);
 
+    // Generate slug from category name
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-')     // Replace spaces with hyphens
+            .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
+            .trim();                  // Trim leading/trailing spaces
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setCategory(prev => ({ ...prev, [name]: value }));
+
+        // Create updated category object
+        const updatedCategory = { ...category, [name]: value };
+
+        // Auto-generate slug when name changes
+        if (name === 'name' && value) {
+            updatedCategory.slug = generateSlug(value);
+        }
+
+        // Update state with the new category object
+        setCategory(updatedCategory);
     };
 
     const handleSubmit = async (e) => {

@@ -23,6 +23,7 @@ import Settings from './pages/Settings';
 import Categories from './pages/Categories';
 import AddCategory from './pages/AddCategory';
 import EditCategory from './pages/EditCategory';
+import DraftProducts from './pages/DraftProducts';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/Loading.css';
@@ -197,6 +198,11 @@ function App() {
                     <Route path="/products/add" element={
                         <RequireManagerRole>
                             <AddProduct />
+                        </RequireManagerRole>
+                    } />
+                    <Route path="/products/drafts" element={
+                        <RequireManagerRole>
+                            <DraftProducts />
                         </RequireManagerRole>
                     } />
                     <Route path="/categories" element={

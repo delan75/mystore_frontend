@@ -30,7 +30,13 @@ const AddCategory = () => {
                         'Authorization': `Bearer ${accessToken}`,
                     }
                 });
-                setParentCategories(response.data.results || response.data);
+
+                // Get all categories from the response
+                const allCategories = response.data.results || response.data;
+                console.log('All parent categories:', allCategories);
+
+                // Set the parent categories state with all categories
+                setParentCategories(allCategories);
             } catch (error) {
                 console.error('Failed to fetch parent categories:', error);
                 toast.error('Failed to load parent categories');
@@ -42,15 +48,29 @@ const AddCategory = () => {
         }
     }, [accessToken]);
 
+    // Generate slug from category name
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-')     // Replace spaces with hyphens
+            .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
+            .trim();                  // Trim leading/trailing spaces
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setCategory(prev => ({ ...prev, [name]: value }));
 
-        // Auto-generate slug from name if slug field is empty
-        if (name === 'name' && !category.slug) {
-            const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-            setCategory(prev => ({ ...prev, slug }));
+        // Create updated category object
+        const updatedCategory = { ...category, [name]: value };
+
+        // Auto-generate slug when name changes
+        if (name === 'name' && value) {
+            updatedCategory.slug = generateSlug(value);
         }
+
+        // Update state with the new category object
+        setCategory(updatedCategory);
     };
 
     const handleSubmit = async (e) => {

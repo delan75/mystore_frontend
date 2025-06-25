@@ -112,6 +112,9 @@ label.active {
     transform: translateY(-25px);
     left: 2px;
     font-size: 14px;
+    background-color: rgba(19, 35, 47, 0.9); /* Match form background */
+    padding: 0 5px;
+    z-index: 10;
 }
 
 label.active .req {
@@ -168,6 +171,9 @@ input, select {
     transform: translateY(-25px);
     left: 2px;
     font-size: 14px;
+    background-color: rgba(19, 35, 47, 0.9); /* Match form background */
+    padding: 0 5px;
+    z-index: 10;
 }
 
 /* Input wrappers */

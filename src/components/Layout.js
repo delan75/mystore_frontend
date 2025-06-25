@@ -268,15 +268,26 @@ const Layout = ({ children }) => {
 
                                         {/* Add Product - only visible to admin/manager */}
                                         {hasProductManagementAccess && (
-                                            <li>
-                                                <Link
-                                                    to="/products/add"
-                                                    className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
-                                                >
-                                                    <i className="fas fa-plus mr-2"></i>
-                                                    <span>Add Product</span>
-                                                </Link>
-                                            </li>
+                                            <>
+                                                <li>
+                                                    <Link
+                                                        to="/products/add"
+                                                        className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                                    >
+                                                        <i className="fas fa-plus mr-2"></i>
+                                                        <span>Add Product</span>
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link
+                                                        to="/products/drafts"
+                                                        className="text-white hover:text-[#1ab188] block py-1 text-sm flex items-center"
+                                                    >
+                                                        <i className="fas fa-file-alt mr-2"></i>
+                                                        <span>Draft Products</span>
+                                                    </Link>
+                                                </li>
+                                            </>
                                         )}
                                     </ul>
                                 )}
